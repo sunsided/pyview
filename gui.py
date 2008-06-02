@@ -22,6 +22,7 @@ class MyForm(QtGui.QMainWindow):
 		self.connect(exit, QtCore.SIGNAL("triggered()"), QtCore.SLOT("close()"))
 		
 		# Menüzeile
+		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
 		menubar = self.menuBar()
 		file = menubar.addMenu("&Datei")
 		file.addAction(exit)
