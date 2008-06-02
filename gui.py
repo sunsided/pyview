@@ -32,6 +32,11 @@ class MyForm(QtGui.QWidget):
 
 app = QtGui.QApplication(sys.argv)
 
+translator = QtCore.QTranslator()
+translator.load("qt_de", "/usr/share/qt4/translations")
+app.installTranslator(translator)
+
+
 form = MyForm()
 form.show()
 
