@@ -32,10 +32,10 @@ class MyForm(QtGui.QWidget):
 
 app = QtGui.QApplication(sys.argv)
 
+# Siehe: http://www.riverbankcomputing.co.uk/static/Docs/PyQt4/html/qtranslator.html
 translator = QtCore.QTranslator()
 translator.load("qt_de", "/usr/share/qt4/translations")
 app.installTranslator(translator)
-
 
 form = MyForm()
 form.show()
