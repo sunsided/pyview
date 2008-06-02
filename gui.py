@@ -8,14 +8,15 @@ class MyForm(QtGui.QWidget):
 	def __init__(self, parent=None):
 		QtGui.QWidget.__init__(self, parent)
 
-		self.setGeometry(300, 300, 250, 150)
-		self.setWindowTitle('Icon')
+		self.resize(250, 150)
+		self.setWindowTitle('Testanwendung')
 		self.setWindowIcon(QtGui.QIcon('icons/icon.gif'))
+		self.center()
 
 		QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
 		quit = QtGui.QPushButton(u"Schließen", self)
 		quit.setGeometry(10, 10, 60, 35)
-		quit.setToolTip('Das Fenster nach <b>Oblivion</b> schicken')
+		quit.setToolTip("Das Fenster nach <b>Oblivion</b> schicken")
 
 		self.connect(	quit, QtCore.SIGNAL('clicked()'), 
 						self, QtCore.SLOT('close()'))
@@ -28,6 +29,11 @@ class MyForm(QtGui.QWidget):
 			event.accept()
 		else:
 			event.ignore()
+
+	def center(self):
+		screen = QtGui.QDesktopWidget().screenGeometry()
+		size =  self.geometry()
+		self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
 
 
 app = QtGui.QApplication(sys.argv)
