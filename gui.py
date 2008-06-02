@@ -1,31 +1,29 @@
 #!/usr/bin/python
 
 import sys
-from PyQt4 import QtGui
+from PyQt4 import QtGui, QtCore
 
-class Icon(QtGui.QWidget):
-    def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+class MyForm(QtGui.QWidget):
+	def __init__(self, parent=None):
+		QtGui.QWidget.__init__(self, parent)
 
-        self.setGeometry(300, 300, 250, 150)
-        self.setWindowTitle('Icon')
-        self.setWindowIcon(QtGui.QIcon('icons/icon.gif'))
+		self.setGeometry(300, 300, 250, 150)
+		self.setWindowTitle('Icon')
+		self.setWindowIcon(QtGui.QIcon('icons/icon.gif'))
 
-	self.setToolTip('This is a <b>QWidget</b> widget')
-        QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
+		QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
+		quit = QtGui.QPushButton('Close', self)
+		quit.setGeometry(10, 10, 60, 35)
+		quit.setToolTip('Das Fenster nach <b>Oblivion</b> schicken')
 
+		self.connect(quit, QtCore.SIGNAL('clicked()'), 
+				QtGui.qApp, QtCore.SLOT('quit()'))
 
 
 app = QtGui.QApplication(sys.argv)
 
-widget = QtGui.QWidget()
-#widget.resize(250, 150)
-#widget.setWindowTitle('Hallo, Welt')
-#widget.show()
-
-icon = Icon()
-icon.show()
-
+form = MyForm()
+form.show()
 
 sys.exit(app.exec_())
 
