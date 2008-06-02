@@ -1,19 +1,54 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Kudos:
+#		http://www.webappers.com/2008/02/12/webappers-released-free-web-application-icons-set/
+#		http://lists.kde.org/?l=pykde&m=114235100819012&w=2
 
-import sys
+import sys, os, Image
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
 class QDisplay(QWidget):
 	def __init__(self, parent=None):
 		QWidget.__init__(self, parent)
-		
+			
+		# Hintergrundfarbe setzen
 		self.setAutoFillBackground(True)
-		
 		palette = self.palette()
 		palette.setColor(QPalette.Background, QColor(32, 32, 32))
 		self.setPalette(palette)
+		
+		# Bild setzen
+		self.image = QImage()
+		
+	def open(self, filename):
+		print("Opening file: " + filename)
+		
+		# load an image using PIL, first read it
+		self.PILimage  = Image.open(str(filename))
+		
+		print("File opened.")
+		
+		self.__PIL2Qt()
+		
+	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
+		print("Converting file ...")
+		
+		# I have only tested the jpeg encoder, there are others, see
+		# http://mail.python.org/pipermail/image-sig/2004-September/002908.html
+		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
+		self.image.loadFromData(QByteArray(PILstring))
+		
+		print("File converted and image set.")
+		
+	def paintEvent(self, Event):
+		print("In paint event.")
+	
+		painter = QPainter(self)
+		painter.drawImage(0, 0, self.image)
+		
+		print("Left paint event.")
 
 class MyForm(QMainWindow):
 	def __init__(self, parent=None):
@@ -27,9 +62,14 @@ class MyForm(QMainWindow):
 		self.statusBar().showMessage("Programm gestartet.")
 		
 		# Das Display-Widget
-		displayArea = QDisplay()
-		self.setCentralWidget(displayArea)
+		self.displayArea = QDisplay()
+		self.setCentralWidget(self.displayArea)
 
+		# Menüeintrag zum Laden eines Bildes
+		open = QAction(QIcon("icons/Load.png"), "&Laden ...", self)
+		open.setShortcut("O")
+		open.setStatusTip("Eine Bilddatei laden")
+		self.connect(open, SIGNAL("triggered()"), self.openImage)
 		
 		# Menüeintrag zum Beenden
 		exit = QAction(QIcon("icons/exit.gif"), "&Beenden", self)
@@ -41,10 +81,38 @@ class MyForm(QMainWindow):
 		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
 		menubar = self.menuBar()
 		file = menubar.addMenu("&Datei")
+		file.addAction(open)
+		file.addSeparator()
 		file.addAction(exit)
 
+	def getUserHomeDir(self):
+		return os.environ.get('HOME')
+
+	def openImage(self):
+		# Startverzeichnis holen
+		startDir = self.getUserHomeDir()
+		
+		# Dateifilter definieren
+		filters = QStringList()
+		filters << "Bilder (*.png *.xpm *.jpg)" << "Alle Dateien (*)";
+		
+		# Dialog anzeigen
+		dialog = QFileDialog(self)
+		dialog.setFileMode(QFileDialog.ExistingFile)
+		dialog.setDirectory(startDir)
+		dialog.setFilters(filters)
+		dialog.setViewMode(QFileDialog.Detail)
+		
+		# Wenn OK geklickt wurde, ...
+		if (dialog.exec_()):
+			# Dateinamen holen und Datei öffnen
+			fileNames = dialog.selectedFiles()
+			fileName = fileNames[0]
+			self.displayArea.open(fileName)
+			self.displayArea.repaint()
 
 	def closeEvent(self, event):
+		# TODO Nachfragen, ob das Programm beendet werden soll per Optionen ein- oder ausschalten
 		#reply = QMessageBox.question(self, "Programm beenden", "Sind Sie sicher?", QMessageBox.Yes, QMessageBox.No)
 
 		#if reply == QMessageBox.Yes:
