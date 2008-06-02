@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import sys
 from PyQt4 import QtGui, QtCore
@@ -12,7 +13,7 @@ class MyForm(QtGui.QWidget):
 		self.setWindowIcon(QtGui.QIcon('icons/icon.gif'))
 
 		QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
-		quit = QtGui.QPushButton('Schlie\337en', self)
+		quit = QtGui.QPushButton(u"Schließen", self)
 		quit.setGeometry(10, 10, 60, 35)
 		quit.setToolTip('Das Fenster nach <b>Oblivion</b> schicken')
 
