@@ -4,25 +4,31 @@
 import sys
 from PyQt4 import QtGui, QtCore
 
-class MyForm(QtGui.QWidget):
+class MyForm(QtGui.QMainWindow):
 	def __init__(self, parent=None):
 		QtGui.QWidget.__init__(self, parent)
 
+		# Fensterstatus setzen
 		self.resize(250, 150)
-		self.setWindowTitle('Testanwendung')
-		self.setWindowIcon(QtGui.QIcon('icons/icon.gif'))
+		self.setWindowTitle("Testanwendung")
+		self.setWindowIcon(QtGui.QIcon("icons/icon.gif"))
 		self.center()
+		self.statusBar().showMessage("Test")
+		
+		# Menüeintrag zum Beenden
+		exit = QtGui.QAction(QtGui.QIcon("icons/exit.gif"), "&Beenden", self)
+		exit.setShortcut("ESC")
+		exit.setStatusTip("Beendet das Programm")
+		self.connect(exit, QtCore.SIGNAL("triggered()"), QtCore.SLOT("close()"))
+		
+		# Menüzeile
+		menubar = self.menuBar()
+		file = menubar.addMenu("&Datei")
+		file.addAction(exit)
 
-		QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
-		quit = QtGui.QPushButton(u"Schließen", self)
-		quit.setGeometry(10, 10, 60, 35)
-		quit.setToolTip("Das Fenster nach <b>Oblivion</b> schicken")
-
-		self.connect(	quit, QtCore.SIGNAL('clicked()'), 
-						self, QtCore.SLOT('close()'))
 
 	def closeEvent(self, event):
-		reply = QtGui.QMessageBox.question(self, 'Programm beenden',
+		reply = QtGui.QMessageBox.question(self, "Programm beenden",
 			"Sind Sie sicher?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 
 		if reply == QtGui.QMessageBox.Yes:
