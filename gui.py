@@ -13,7 +13,12 @@ class MyForm(QtGui.QMainWindow):
 		self.setWindowTitle("Testanwendung")
 		self.setWindowIcon(QtGui.QIcon("icons/icon.gif"))
 		self.center()
-		self.statusBar().showMessage("Test")
+		self.statusBar().showMessage("Programm gestartet.")
+		
+		textEdit = QtGui.QTextEdit()
+		textEdit.setText("Dies ist das zentrale Widget.<br />Yeah.")
+		self.setCentralWidget(textEdit)
+
 		
 		# Menüeintrag zum Beenden
 		exit = QtGui.QAction(QtGui.QIcon("icons/exit.gif"), "&Beenden", self)
