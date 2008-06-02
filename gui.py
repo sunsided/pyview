@@ -12,12 +12,21 @@ class MyForm(QtGui.QWidget):
 		self.setWindowIcon(QtGui.QIcon('icons/icon.gif'))
 
 		QtGui.QToolTip.setFont(QtGui.QFont('OldEnglish', 10))
-		quit = QtGui.QPushButton('Close', self)
+		quit = QtGui.QPushButton('Schlie\337en', self)
 		quit.setGeometry(10, 10, 60, 35)
 		quit.setToolTip('Das Fenster nach <b>Oblivion</b> schicken')
 
-		self.connect(quit, QtCore.SIGNAL('clicked()'), 
-				QtGui.qApp, QtCore.SLOT('quit()'))
+		self.connect(	quit, QtCore.SIGNAL('clicked()'), 
+						self, QtCore.SLOT('close()'))
+
+	def closeEvent(self, event):
+		reply = QtGui.QMessageBox.question(self, 'Programm beenden',
+			"Sind Sie sicher?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+
+		if reply == QtGui.QMessageBox.Yes:
+			event.accept()
+		else:
+			event.ignore()
 
 
 app = QtGui.QApplication(sys.argv)
