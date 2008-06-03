@@ -50,6 +50,9 @@ class QDisplay(QLabel):
 	def paintEvent(self, Event):
 		painter = QPainter(self)
 		painter.drawImage(0, 0, self.image)
+		
+	def setSize(self, size):
+		
 
 
 
