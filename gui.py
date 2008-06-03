@@ -5,7 +5,7 @@
 #		http://www.webappers.com/2008/02/12/webappers-released-free-web-application-icons-set/
 #		http://lists.kde.org/?l=pykde&m=114235100819012&w=2
 
-import sys, os, Image
+import sys, os, Image, copy
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
@@ -14,6 +14,8 @@ class QDisplay(QLabel):
 	image = None
 
 	def __init__(self, parent=None):
+		"""Initialisiert die Klasse"""
+	
 		QWidget.__init__(self, parent)
 			
 		# Hintergrundfarbe setzen
@@ -30,6 +32,8 @@ class QDisplay(QLabel):
 		self.image = QImage()
 		
 	def open(self, filename):
+		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
+		
 		print("Opening file: " + filename)
 		# load an image using PIL, first read it
 		self.PILimage  = Image.open(str(filename))		
@@ -37,6 +41,8 @@ class QDisplay(QLabel):
 		self.__PIL2Qt()
 		
 	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
+		"""Wandelt ein Bild der PIL in ein QImage um"""
+	
 		print("Converting file ...")
 		
 		# I have only tested the jpeg encoder, there are others, see
@@ -48,10 +54,13 @@ class QDisplay(QLabel):
 		print("File converted and image set.")
 		
 	def paintEvent(self, Event):
+		"""Zeichnet das Bild erneut"""
+	
 		painter = QPainter(self)
 		painter.drawImage(0, 0, self.image)
 		
 	def setSize(self, size):
+		"""Setzt Größe des Anzeigeelementes"""
 		return
 
 
@@ -70,6 +79,8 @@ class MyForm(QMainWindow):
 	sizeToFit = None
 
 	def __init__(self, parent=None):
+		"""Initialisiert das Anwendungsfenster"""
+	
 		QMainWindow.__init__(self, parent)
 
 		# Fensterstatus setzen
@@ -93,34 +104,34 @@ class MyForm(QMainWindow):
 		open = QAction(QIcon("icons/Load.png"), "&Laden ...", self)
 		open.setShortcut("O")
 		open.setStatusTip("Eine Bilddatei laden")
-		self.connect(open, SIGNAL("triggered()"), self.openImageDialog)
+		#self.connect(open, SIGNAL("triggered()"), self.openImageDialog)
 		
 		# Menüeintrag zum Laden eines Bildes
 		self.menuFileReopen = QAction(QIcon("icons/Load.png"), "&Erneut laden", self)
 		self.menuFileReopen.setShortcut("SHIFT+R")
 		self.menuFileReopen.setStatusTip("Letzte Bilddatei erneut laden")
 		self.menuFileReopen.setEnabled(False)
-		self.connect(self.menuFileReopen, SIGNAL("triggered()"), self.reOpenImage)
+		#self.connect(self.menuFileReopen, SIGNAL("triggered()"), self.reOpenImage)
 		
 		# Menüeintrag zum Beenden
 		exit = QAction(QIcon("icons/exit.gif"), "&Beenden", self)
 		# FIXME Wenn ESC benutzt wird, um ein Menü zu schließen, geht der Shortcut flöten
 		exit.setShortcut("ESC")
 		exit.setStatusTip("Beendet das Programm")
-		self.connect(exit, SIGNAL("triggered()"), SLOT("close()"))
+		#self.connect(exit, SIGNAL("triggered()"), SLOT("close()"))
 		
 		# Vollbild-Menüeintrag
 		fullScreen = QAction(QIcon("icons/Loading.png"), "&Vollbild", self)
 		fullScreen.setShortcut("RETURN")
 		fullScreen.setStatusTip("Wechselt in den Vollbildmodus")
-		fullScreen.connect(fullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
+		#fullScreen.connect(fullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
 
 		# Vollbild-Menüeintrag
 		self.sizeToFit = QAction(QIcon("icons/Loading.png"), u"An Fenstergröße &anpassen", self)
 		self.sizeToFit.setShortcut("F")
 		self.sizeToFit.setCheckable(True)
 		self.sizeToFit.setStatusTip(u"Passt das Bild an die Fenstergröße an")
-		self.sizeToFit.connect(self.sizeToFit, SIGNAL("triggered()"), self.setFitToWindow)
+		#self.sizeToFit.connect(self.sizeToFit, SIGNAL("triggered()"), self.setFitToWindow)
 		
 		# Menüzeile
 		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
@@ -128,11 +139,14 @@ class MyForm(QMainWindow):
 		
 		# Dateimenü
 		file = menuBar.addMenu("&Datei")
-		file.addAction(open)
-		file.addAction(self.menuFileReopen)
+		#file.addAction(open)
+		self.addMenuAction(file, open, self.openImageDialog)
+		#file.addAction(self.menuFileReopen)
+		self.addMenuAction(file, self.menuFileReopen, self.reOpenImage)
 		file.addSeparator()
-		file.addAction(exit)
-		self.addAction(exit)
+		#file.addAction(exit)
+		#self.addAction(exit)
+		self.addMenuAction(file, exit, SLOT("close()"))
 
 		# Ansichtsmenü
 		view = menuBar.addMenu("&Ansicht")
@@ -144,7 +158,19 @@ class MyForm(QMainWindow):
 		# Eigene Trigger
 		self.connect(self, SIGNAL("imageLoaded"), self.notifyFileLoaded)
 	
+	def addMenuAction(self, menu, action, triggerTarget):
+		"""Erstellt einen Menüeintrag"""
+	
+		# First, clone the action and assign it to the menu
+		clonedAction = action
+		menu.addAction(action)
+		# Now, connect the triggered() signal to the cloned action and assign it to self)
+		clonedAction.connect(clonedAction, SIGNAL("triggered()"), triggerTarget)
+		self.addAction(clonedAction)
+	
 	def toggleFullScreen(self):
+		"""Schaltet zwischen Vollbild und Normalansicht um"""
+	
 		self.isFullScreen = not self.isFullScreen
 		if(self.isFullScreen):
 			self.showFullScreen()
@@ -156,14 +182,20 @@ class MyForm(QMainWindow):
 			self.statusBar().show()
 	
 	def notifyFileLoaded(self):
+		"""Wird gerufen, wenn eine Datei geladen wurde"""
+	
 		self.setStatusTip("Datei geladen.")
 		if( self.lastOpenedFile != None):
 			self.menuFileReopen.setEnabled(True)
 		
 	def getUserHomeDir(self):
+		"""Holt das Home-Verzeichnis des aktuellen Nutzers"""
+	
 		return str(os.environ.get('HOME'))
 
 	def openImageDialog(self):
+		"""Zeigt den \"Bild Laden\"-Dialog an"""
+	
 		# Startverzeichnis holen
 		startDir = self.getUserHomeDir()
 		if( self.lastOpenedFile != None ):
@@ -189,16 +221,22 @@ class MyForm(QMainWindow):
 			self.openImage(fileName)
 
 	def reOpenImage(self):
+		"""Öffnet das zuletzt geöffnete Bild erneut"""
+	
 		if( self.lastOpenedFile == None ):
 			return
 		self.openImage(self.lastOpenedFile)
 
 	def openImage(self, fileName):
+		"""Lädt ein Bild, dessen Pfad bekannt ist"""
+	
 		self.displayArea.open(str(fileName))
 		self.displayArea.repaint()
 		self.emit(SIGNAL("imageLoaded"), ())
 
 	def closeEvent(self, event):
+		"""Wird gerufen, wenn die Anwendung geschlossen werden soll"""
+	
 		# TODO Nachfragen, ob das Programm beendet werden soll per Optionen ein- oder ausschalten
 		#reply = QMessageBox.question(self, "Programm beenden", "Sind Sie sicher?", QMessageBox.Yes, QMessageBox.No)
 
@@ -209,11 +247,15 @@ class MyForm(QMainWindow):
 		return
 
 	def center(self):
+		"""Zentriert die Anwendung auf dem Bildschirm"""
+	
 		screen = QDesktopWidget().screenGeometry()
 		size =  self.geometry()
 		self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
 		
 	def setFitToWindow(self):
+		"""Schaltet die verschiedenen Ansichtsmodi des Bildes durch"""
+	
 		state = self.sizeToFit.isChecked()
 		print "setFitToWindow called: " + str(state)
 		if( state == False):
