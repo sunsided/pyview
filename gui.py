@@ -94,6 +94,17 @@ class MyForm(QMainWindow):
 		self.scrollArea.setWidget(self.displayArea)
 		self.setCentralWidget(self.scrollArea)
 
+		# Menü erstellen
+		self.buildMenu()
+	
+	def buildMenu(self):
+		"""Erstellt die Menüleiste und setzt die Shortcuts"""
+		
+		# Menüzeile
+		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
+		# http://lists.trolltech.com/qt-interest/2007-07/thread00771-0.html
+		menuBar = self.menuBar()
+		
 		# Menüeintrag zum Laden eines Bildes
 		menuFileOpen = QAction(QIcon("icons/Load.png"), "&Laden ...", self)
 		menuFileOpen.setShortcut("O")
@@ -106,12 +117,24 @@ class MyForm(QMainWindow):
 		menuFileReopen.setStatusTip("Letzte Bilddatei erneut laden")
 		menuFileReopen.setEnabled(False)
 		self.connect(menuFileReopen, SIGNAL("triggered()"), self.reOpenImage)
+		self.connect(self, SIGNAL("imageLoaded(bool)"), menuFileReopen, SLOT("setEnabled(bool)"))
 		
 		# Menüeintrag zum Beenden
 		menuFileExit = QAction(QIcon("icons/exit.gif"), "&Beenden", self)
 		menuFileExit.setShortcut("ESC")
 		menuFileExit.setStatusTip("Beendet das Programm")
 		self.connect(menuFileExit, SIGNAL("triggered()"), SLOT("close()"))
+		
+		# Dateimenü
+		file = menuBar.addMenu("&Datei")	
+		self.addAction(menuFileOpen)
+		file.addAction(menuFileOpen)
+		self.addAction(menuFileReopen)
+		file.addAction(menuFileReopen)
+		file.addSeparator()
+		self.addAction(menuFileExit)
+		file.addAction(menuFileExit)
+		
 		
 		# Vollbild-Menüeintrag
 		menuViewFullScreen = QAction(QIcon("icons/Loading.png"), "&Vollbild", self)
@@ -127,31 +150,12 @@ class MyForm(QMainWindow):
 		menuViewSizeToFit.setStatusTip(u"Passt das Bild an die Fenstergröße an")
 		menuViewSizeToFit.connect(menuViewSizeToFit, SIGNAL("toggled(bool)"), self.setFitToWindow)
 		
-		# Menüzeile
-		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
-		menuBar = self.menuBar()
-		
-		# Dateimenü
-		file = menuBar.addMenu("&Datei")	
-		 # http://lists.trolltech.com/qt-interest/2007-07/thread00771-0.html
-		self.addAction(menuFileOpen)
-		file.addAction(menuFileOpen)
-		self.addAction(menuFileReopen)
-		file.addAction(menuFileReopen)
-		file.addSeparator()
-		self.addAction(menuFileExit)
-		file.addAction(menuFileExit)
-	
-		
 		# Ansichtsmenü
 		view = menuBar.addMenu("&Ansicht")
 		self.addAction(menuViewSizeToFit)
 		view.addAction(menuViewSizeToFit)
 		self.addAction(menuViewFullScreen)
 		view.addAction(menuViewFullScreen)
-
-		# Eigene Trigger
-		self.connect(self, SIGNAL("imageLoaded(bool)"), menuFileReopen, SLOT("setEnabled(bool)"))
 	
 	def toggleFullScreen(self):
 		"""Schaltet zwischen Vollbild und Normalansicht um"""
@@ -188,7 +192,8 @@ class MyForm(QMainWindow):
 		
 		# Dateifilter definieren
 		filters = QStringList()
-		filters << "Bilder (*.png *.xpm *.jpg)" << "Alle Dateien (*)";
+		filters << "Bilder (*.jpg *.gif *.png *.xpm)"
+		filters << "Alle Dateien (*)"
 		
 		# Dialog anzeigen
 		dialog = QFileDialog(self)
