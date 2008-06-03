@@ -68,6 +68,7 @@ class MyForm(QMainWindow):
 	# Membervariablen
 	lastOpenedFile = None
 	isFullScreen = False
+	askBeforeClosing = False
 	
 	# Objekte
 	scrollArea = None
@@ -230,15 +231,14 @@ class MyForm(QMainWindow):
 
 	def closeEvent(self, event):
 		"""Wird gerufen, wenn die Anwendung geschlossen werden soll"""
-	
-		# TODO Nachfragen, ob das Programm beendet werden soll per Optionen ein- oder ausschalten
-		#reply = QMessageBox.question(self, "Programm beenden", "Sind Sie sicher?", QMessageBox.Yes, QMessageBox.No)
 
-		#if reply == QMessageBox.Yes:
-		#	event.accept()
-		#else:
-		#	event.ignore()
-		return
+		if( self.askBeforeClosing ):
+			reply = QMessageBox.question(self, "Programm beenden", "Sind Sie sicher?", QMessageBox.Yes, QMessageBox.No)
+	
+			if reply == QMessageBox.Yes:
+				event.accept()
+			else:
+				event.ignore()
 
 	def center(self):
 		"""Zentriert die Anwendung auf dem Bildschirm"""
