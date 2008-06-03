@@ -5,7 +5,7 @@
 #		http://www.webappers.com/2008/02/12/webappers-released-free-web-application-icons-set/
 #		http://lists.kde.org/?l=pykde&m=114235100819012&w=2
 
-import sys, os, Image, copy
+import sys, os, Image
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
@@ -104,34 +104,34 @@ class MyForm(QMainWindow):
 		open = QAction(QIcon("icons/Load.png"), "&Laden ...", self)
 		open.setShortcut("O")
 		open.setStatusTip("Eine Bilddatei laden")
-		#self.connect(open, SIGNAL("triggered()"), self.openImageDialog)
+		self.connect(open, SIGNAL("triggered()"), self.openImageDialog)
 		
 		# Menüeintrag zum Laden eines Bildes
 		self.menuFileReopen = QAction(QIcon("icons/Load.png"), "&Erneut laden", self)
 		self.menuFileReopen.setShortcut("SHIFT+R")
 		self.menuFileReopen.setStatusTip("Letzte Bilddatei erneut laden")
 		self.menuFileReopen.setEnabled(False)
-		#self.connect(self.menuFileReopen, SIGNAL("triggered()"), self.reOpenImage)
+		self.connect(self.menuFileReopen, SIGNAL("triggered()"), self.reOpenImage)
 		
 		# Menüeintrag zum Beenden
 		exit = QAction(QIcon("icons/exit.gif"), "&Beenden", self)
 		# FIXME Wenn ESC benutzt wird, um ein Menü zu schließen, geht der Shortcut flöten
 		exit.setShortcut("ESC")
 		exit.setStatusTip("Beendet das Programm")
-		#self.connect(exit, SIGNAL("triggered()"), SLOT("close()"))
+		self.connect(exit, SIGNAL("triggered()"), SLOT("close()"))
 		
 		# Vollbild-Menüeintrag
 		fullScreen = QAction(QIcon("icons/Loading.png"), "&Vollbild", self)
 		fullScreen.setShortcut("RETURN")
 		fullScreen.setStatusTip("Wechselt in den Vollbildmodus")
-		#fullScreen.connect(fullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
+		fullScreen.connect(fullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
 
 		# Vollbild-Menüeintrag
 		self.sizeToFit = QAction(QIcon("icons/Loading.png"), u"An Fenstergröße &anpassen", self)
 		self.sizeToFit.setShortcut("F")
 		self.sizeToFit.setCheckable(True)
 		self.sizeToFit.setStatusTip(u"Passt das Bild an die Fenstergröße an")
-		#self.sizeToFit.connect(self.sizeToFit, SIGNAL("triggered()"), self.setFitToWindow)
+		self.sizeToFit.connect(self.sizeToFit, SIGNAL("triggered()"), self.setFitToWindow)
 		
 		# Menüzeile
 		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
@@ -139,34 +139,22 @@ class MyForm(QMainWindow):
 		
 		# Dateimenü
 		file = menuBar.addMenu("&Datei")
-		#file.addAction(open)
-		self.addMenuAction(file, open, self.openImageDialog)
-		#file.addAction(self.menuFileReopen)
-		self.addMenuAction(file, self.menuFileReopen, self.reOpenImage)
+		file.addAction(open)
+		file.addAction(self.menuFileReopen)
 		file.addSeparator()
-		#file.addAction(exit)
-		#self.addAction(exit)
-		self.addMenuAction(file, exit, SLOT("close()"))
-
+		file.addAction(exit)
+		self.addAction(exit) # http://lists.trolltech.com/qt-interest/2007-07/thread00771-0.html
+	
+		
 		# Ansichtsmenü
 		view = menuBar.addMenu("&Ansicht")
 		view.addAction(self.sizeToFit)
 		self.addAction(self.sizeToFit)
-		#view.addAction(fullScreen)
+		view.addAction(fullScreen)
 		self.addAction(fullScreen)
 
 		# Eigene Trigger
 		self.connect(self, SIGNAL("imageLoaded"), self.notifyFileLoaded)
-	
-	def addMenuAction(self, menu, action, triggerTarget):
-		"""Erstellt einen Menüeintrag"""
-	
-		# First, clone the action and assign it to the menu
-		clonedAction = action
-		menu.addAction(action)
-		# Now, connect the triggered() signal to the cloned action and assign it to self)
-		clonedAction.connect(clonedAction, SIGNAL("triggered()"), triggerTarget)
-		self.addAction(clonedAction)
 	
 	def toggleFullScreen(self):
 		"""Schaltet zwischen Vollbild und Normalansicht um"""
