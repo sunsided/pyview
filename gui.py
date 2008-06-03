@@ -19,7 +19,7 @@ class QDisplay(QWidget):
 		palette.setColor(QPalette.Background, QColor(32, 32, 32))
 		self.setPalette(palette)
 		
-		# Bild setzen
+		# Variablen setzen
 		self.image = QImage()
 		
 	def open(self, filename):
@@ -51,6 +51,9 @@ class QDisplay(QWidget):
 		print("Left paint event.")
 
 class MyForm(QMainWindow):
+	# Membervariablen
+	lastOpenedFile = None
+
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
 
@@ -69,7 +72,13 @@ class MyForm(QMainWindow):
 		open = QAction(QIcon("icons/Load.png"), "&Laden ...", self)
 		open.setShortcut("O")
 		open.setStatusTip("Eine Bilddatei laden")
-		self.connect(open, SIGNAL("triggered()"), self.openImage)
+		self.connect(open, SIGNAL("triggered()"), self.openImageDialog)
+		
+		# Menüeintrag zum Laden eines Bildes
+		reopen = QAction(QIcon("icons/Load.png"), "&Erneut laden", self)
+		reopen.setShortcut("SHIFT+R")
+		reopen.setStatusTip("Letzte Bilddatei erneut laden")
+		self.connect(reopen, SIGNAL("triggered()"), self.reOpenImage)
 		
 		# Menüeintrag zum Beenden
 		exit = QAction(QIcon("icons/exit.gif"), "&Beenden", self)
@@ -82,15 +91,18 @@ class MyForm(QMainWindow):
 		menubar = self.menuBar()
 		file = menubar.addMenu("&Datei")
 		file.addAction(open)
+		file.addAction(reopen)
 		file.addSeparator()
 		file.addAction(exit)
 
 	def getUserHomeDir(self):
-		return os.environ.get('HOME')
+		return str(os.environ.get('HOME'))
 
-	def openImage(self):
+	def openImageDialog(self):
 		# Startverzeichnis holen
 		startDir = self.getUserHomeDir()
+		if( self.lastOpenedFile != None ):
+			startDir = os.path.basename(str(self.lastOpenedFile))
 		
 		# Dateifilter definieren
 		filters = QStringList()
@@ -104,12 +116,21 @@ class MyForm(QMainWindow):
 		dialog.setViewMode(QFileDialog.Detail)
 		
 		# Wenn OK geklickt wurde, ...
-		if (dialog.exec_()):
+		if( dialog.exec_() ):
 			# Dateinamen holen und Datei öffnen
 			fileNames = dialog.selectedFiles()
 			fileName = fileNames[0]
-			self.displayArea.open(fileName)
-			self.displayArea.repaint()
+			self.lastOpenedFile = fileName
+			self.openImage(fileName)
+
+	def reOpenImage(self):
+		if( self.lastOpenedFile == None ):
+			return
+		self.openImage(self.lastOpenedFile)
+
+	def openImage(self, fileName):
+		self.displayArea.open(str(fileName))
+		self.displayArea.repaint()
 
 	def closeEvent(self, event):
 		# TODO Nachfragen, ob das Programm beendet werden soll per Optionen ein- oder ausschalten
@@ -128,7 +149,7 @@ class MyForm(QMainWindow):
 
 
 # Die Anwendung nur starten, wenn die Source nicht als Modul geladen wird
-if __name__ == "__main__":
+if( __name__ == "__main__" ):
 	app = QApplication(sys.argv)
 
 	# Siehe: http://www.riverbankcomputing.co.uk/static/Docs/PyQt4/html/qtranslator.html
