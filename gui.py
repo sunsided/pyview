@@ -9,7 +9,10 @@ import sys, os, Image
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
-class QDisplay(QWidget):
+class QDisplay(QLabel):
+	# Member
+	image = None
+
 	def __init__(self, parent=None):
 		QWidget.__init__(self, parent)
 			
@@ -19,17 +22,18 @@ class QDisplay(QWidget):
 		palette.setColor(QPalette.Background, QColor(32, 32, 32))
 		self.setPalette(palette)
 		
+		# Tweaking
+		self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+		self.setScaledContents(True)
+		
 		# Variablen setzen
 		self.image = QImage()
 		
 	def open(self, filename):
 		print("Opening file: " + filename)
-		
 		# load an image using PIL, first read it
-		self.PILimage  = Image.open(str(filename))
-		
+		self.PILimage  = Image.open(str(filename))		
 		print("File opened.")
-		
 		self.__PIL2Qt()
 		
 	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
@@ -39,6 +43,7 @@ class QDisplay(QWidget):
 		# http://mail.python.org/pipermail/image-sig/2004-September/002908.html
 		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
 		self.image.loadFromData(QByteArray(PILstring))
+		self.resize(self.image.size())
 
 		print("File converted and image set.")
 		
@@ -53,8 +58,13 @@ class MyForm(QMainWindow):
 	lastOpenedFile = None
 	isFullScreen = False
 	
+	# Objekte
+	scrollArea = None
+	displayArea = None
+	
 	# Menüeinträge
 	menuFileReopen = None
+	sizeToFit = None
 
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
@@ -65,10 +75,16 @@ class MyForm(QMainWindow):
 		self.setWindowIcon(QIcon("icons/icon.gif"))
 		self.center()
 		self.statusBar().showMessage("Programm gestartet.")
-		
+			
 		# Das Display-Widget
 		self.displayArea = QDisplay()
-		self.setCentralWidget(self.displayArea)
+		
+		# Scroll Area
+		self.scrollArea = QScrollArea(self)
+		self.scrollArea.setBackgroundRole(QPalette.Dark)
+		self.scrollArea.setWidget(self.displayArea)
+		self.setCentralWidget(self.scrollArea)
+		#self.setCentralWidget(self.displayArea)
 
 		# Menüeintrag zum Laden eines Bildes
 		open = QAction(QIcon("icons/Load.png"), "&Laden ...", self)
@@ -85,15 +101,23 @@ class MyForm(QMainWindow):
 		
 		# Menüeintrag zum Beenden
 		exit = QAction(QIcon("icons/exit.gif"), "&Beenden", self)
+		# FIXME Wenn ESC benutzt wird, um ein Menü zu schließen, geht der Shortcut flöten
 		exit.setShortcut("ESC")
 		exit.setStatusTip("Beendet das Programm")
 		self.connect(exit, SIGNAL("triggered()"), SLOT("close()"))
 		
 		# Vollbild-Menüeintrag
-		fullScreen = QAction("&Vollbild", self)
+		fullScreen = QAction(QIcon("icons/Loading.png"), "&Vollbild", self)
 		fullScreen.setShortcut("RETURN")
 		fullScreen.setStatusTip("Wechselt in den Vollbildmodus")
 		fullScreen.connect(fullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
+
+		# Vollbild-Menüeintrag
+		self.sizeToFit = QAction(QIcon("icons/Loading.png"), u"An Fenstergröße &anpassen", self)
+		self.sizeToFit.setShortcut("F")
+		self.sizeToFit.setCheckable(True)
+		self.sizeToFit.setStatusTip(u"Passt das Bild an die Fenstergröße an")
+		self.sizeToFit.connect(self.sizeToFit, SIGNAL("triggered()"), self.setFitToWindow)
 		
 		# Menüzeile
 		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
@@ -109,6 +133,8 @@ class MyForm(QMainWindow):
 
 		# Ansichtsmenü
 		view = menuBar.addMenu("&Ansicht")
+		view.addAction(self.sizeToFit)
+		self.addAction(self.sizeToFit)
 		view.addAction(fullScreen)
 		self.addAction(fullScreen)
 
@@ -130,7 +156,7 @@ class MyForm(QMainWindow):
 		self.setStatusTip("Datei geladen.")
 		if( self.lastOpenedFile != None):
 			self.menuFileReopen.setEnabled(True)
-
+		
 	def getUserHomeDir(self):
 		return str(os.environ.get('HOME'))
 
@@ -183,6 +209,16 @@ class MyForm(QMainWindow):
 		screen = QDesktopWidget().screenGeometry()
 		size =  self.geometry()
 		self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
+		
+	def setFitToWindow(self):
+		state = self.sizeToFit.isChecked()
+		print "setFitToWindow called: " + str(state)
+		if( state == False):
+			self.scrollArea.setWidgetResizable(False)
+			#self.displayArea.resize(self.displayArea.image.size())
+			self.displayArea.adjustSize()
+		else:
+			self.scrollArea.setWidgetResizable(True)
 
 
 
