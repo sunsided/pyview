@@ -46,9 +46,12 @@ class QDisplay(QWidget):
 		painter = QPainter(self)
 		painter.drawImage(0, 0, self.image)
 
+
+
 class MyForm(QMainWindow):
 	# Membervariablen
 	lastOpenedFile = None
+	isFullScreen = False
 	
 	# Menüeinträge
 	menuFileReopen = None
@@ -86,18 +89,43 @@ class MyForm(QMainWindow):
 		exit.setStatusTip("Beendet das Programm")
 		self.connect(exit, SIGNAL("triggered()"), SLOT("close()"))
 		
+		# Vollbild-Menüeintrag
+		fullScreen = QAction("&Vollbild", self)
+		fullScreen.setShortcut("RETURN")
+		fullScreen.setStatusTip("Wechselt in den Vollbildmodus")
+		fullScreen.connect(fullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
+		
 		# Menüzeile
 		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
-		menubar = self.menuBar()
-		file = menubar.addMenu("&Datei")
+		menuBar = self.menuBar()
+		
+		# Dateimenü
+		file = menuBar.addMenu("&Datei")
 		file.addAction(open)
 		file.addAction(self.menuFileReopen)
 		file.addSeparator()
 		file.addAction(exit)
+		self.addAction(exit)
+
+		# Ansichtsmenü
+		view = menuBar.addMenu("&Ansicht")
+		view.addAction(fullScreen)
+		self.addAction(fullScreen)
 
 		# Eigene Trigger
 		self.connect(self, SIGNAL("imageLoaded"), self.notifyFileLoaded)
-
+	
+	def toggleFullScreen(self):
+		self.isFullScreen = not self.isFullScreen
+		if(self.isFullScreen):
+			self.showFullScreen()
+			self.menuBar().hide()
+			self.statusBar().hide()
+		else:
+			self.showNormal()
+			self.menuBar().show()
+			self.statusBar().show()
+	
 	def notifyFileLoaded(self):
 		self.setStatusTip("Datei geladen.")
 		if( self.lastOpenedFile != None):
@@ -155,6 +183,7 @@ class MyForm(QMainWindow):
 		screen = QDesktopWidget().screenGeometry()
 		size =  self.geometry()
 		self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
+
 
 
 # Die Anwendung nur starten, wenn die Source nicht als Modul geladen wird
