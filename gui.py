@@ -157,20 +157,73 @@ class MyForm(QMainWindow):
 		menuViewFullScreen.setStatusTip("Wechselt in den Vollbildmodus")
 		menuViewFullScreen.setCheckable(True)
 		menuViewFullScreen.connect(menuViewFullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
-
-		# Vollbild-Menüeintrag
-		menuViewSizeToFit = QAction(QIcon("icons/Loading.png"), u"An Fenstergröße &anpassen", self)
-		menuViewSizeToFit.setShortcut("F")
+		
+		# Anzeigemodi
+		menuViewWindowToImageSize = QAction("Fenster ans Bild anpassen (1:1, empfo&hlen)", self)
+		menuViewWindowToImageSize.setCheckable(True)
+		menuViewWindowToImageSize.setProperty("tag", QVariant("WindowToImageSize"))
+		menuViewWindowToImageSize.setStatusTip(u"Passt das Fenster an die Bildgröße an")
+		
+		menuViewSizeToFit = QAction("Bild ans Fenster anpa&ssen", self)
 		menuViewSizeToFit.setCheckable(True)
+		menuViewSizeToFit.setProperty("tag", QVariant("SizeToFit"))
 		menuViewSizeToFit.setStatusTip(u"Passt das Bild an die Fenstergröße an")
-		menuViewSizeToFit.connect(menuViewSizeToFit, SIGNAL("toggled(bool)"), self.setFitToWindow)
+
+		menuViewSizeLargeToFit = QAction(u"Nur große Bilder ans Fenster anpa&ssen", self)
+		menuViewSizeLargeToFit.setCheckable(True)
+		menuViewSizeLargeToFit.setProperty("tag", QVariant("SizeLargeToFit"))
+		menuViewSizeLargeToFit.setStatusTip(u"Passt das Bild an die Fenstergröße an")
+		
+		menuViewFitToScreen = QAction("Fenster/Bild an Bildschirm anpassen", self)
+		menuViewFitToScreen.setCheckable(True)
+		menuViewFitToScreen.setShortcut("F")
+		menuViewFitToScreen.setProperty("tag", QVariant("FitToScreen"))
+		menuViewFitToScreen.setStatusTip(u"Passt Fenster und Bild an die Bildschirmgröße an")
+		
+		menuViewFitLargeToScreen = QAction(u"Nur große Bilder an Bildschirm anpassen", self)
+		menuViewFitLargeToScreen.setCheckable(True)
+		menuViewFitLargeToScreen.setProperty("tag", QVariant("FitLargeToScreen"))
+		menuViewFitLargeToScreen.setStatusTip(u"Passt große Bilder an die Bildschirmgröße an")
+		
+		menuViewFitToScreenWidth = QAction("Bilder an Bildschirmbreite anpassen", self)
+		menuViewFitToScreenWidth.setCheckable(True)
+		menuViewWindowToImageSize.setProperty("tag", QVariant("FitToScreenWidth"))
+		menuViewFitToScreenWidth.setStatusTip("Passt Bilder an die Bildschirmbreite an")
+		
+		menuViewFitToScreenHeight = QAction(u"Bilder an Bildschirmhöhe anpassen", self)
+		menuViewFitToScreenHeight.setCheckable(True)
+		menuViewFitToScreenHeight.setProperty("tag", QVariant("FitToScreenHeight"))
+		menuViewFitToScreenHeight.setStatusTip(u"Passt Bilder an die Bildschirmhöhe an")
+		
+		menuViewNoFit = QAction(u"Keine A&npassung durchführen", self)
+		menuViewNoFit.setCheckable(True)
+		menuViewNoFit.setProperty("tag", QVariant("NoFit"))
+		menuViewNoFit.setStatusTip("Bilder werden nicht angepasst")
 		
 		# Ansichtsmenü
 		view = menuBar.addMenu("&Ansicht")
-		self.addAction(menuViewSizeToFit)
-		view.addAction(menuViewSizeToFit)
 		self.addAction(menuViewFullScreen)
 		view.addAction(menuViewFullScreen)
+		
+		# Anzeige-OptionsMenü
+		viewOptionsWindowed = view.addMenu("&Anzeige-Optionen (Fenstermodus)")
+		viewOptionsWindowedGroup = QActionGroup(self)
+		viewOptionsWindowedGroup.addAction(menuViewWindowToImageSize)
+		viewOptionsWindowedGroup.addAction(menuViewSizeToFit)
+		viewOptionsWindowedGroup.addAction(menuViewSizeLargeToFit)
+		#viewOptionsWindowedGroup.addSeparator()
+		# self.addAction(menuViewFitToScreen)
+		viewOptionsWindowedGroup.addAction(menuViewFitToScreen)
+		viewOptionsWindowedGroup.addAction(menuViewFitLargeToScreen)
+		#viewOptionsWindowedGroup.addSeparator()
+		viewOptionsWindowedGroup.addAction(menuViewFitToScreenWidth)
+		viewOptionsWindowedGroup.addAction(menuViewFitToScreenHeight)
+		viewOptionsWindowedGroup.addAction(menuViewNoFit)
+		viewOptionsWindowedGroup.connect(viewOptionsWindowedGroup, SIGNAL("triggered(QAction*)"), self.trigger)
+		viewOptionsWindowed.addActions(viewOptionsWindowedGroup.actions())
+	
+	def trigger(self, action):
+		print "Selected Menu: " + action.property("tag").toString()
 	
 	def toggleFullScreen(self):
 		"""Schaltet zwischen Vollbild und Normalansicht um"""
