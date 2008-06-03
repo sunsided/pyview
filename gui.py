@@ -39,20 +39,19 @@ class QDisplay(QWidget):
 		# http://mail.python.org/pipermail/image-sig/2004-September/002908.html
 		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
 		self.image.loadFromData(QByteArray(PILstring))
-		
+
 		print("File converted and image set.")
 		
 	def paintEvent(self, Event):
-		print("In paint event.")
-	
 		painter = QPainter(self)
 		painter.drawImage(0, 0, self.image)
-		
-		print("Left paint event.")
 
 class MyForm(QMainWindow):
 	# Membervariablen
 	lastOpenedFile = None
+	
+	# Menüeinträge
+	menuFileReopen = None
 
 	def __init__(self, parent=None):
 		QMainWindow.__init__(self, parent)
@@ -75,10 +74,11 @@ class MyForm(QMainWindow):
 		self.connect(open, SIGNAL("triggered()"), self.openImageDialog)
 		
 		# Menüeintrag zum Laden eines Bildes
-		reopen = QAction(QIcon("icons/Load.png"), "&Erneut laden", self)
-		reopen.setShortcut("SHIFT+R")
-		reopen.setStatusTip("Letzte Bilddatei erneut laden")
-		self.connect(reopen, SIGNAL("triggered()"), self.reOpenImage)
+		self.menuFileReopen = QAction(QIcon("icons/Load.png"), "&Erneut laden", self)
+		self.menuFileReopen.setShortcut("SHIFT+R")
+		self.menuFileReopen.setStatusTip("Letzte Bilddatei erneut laden")
+		self.menuFileReopen.setEnabled(False)
+		self.connect(self.menuFileReopen, SIGNAL("triggered()"), self.reOpenImage)
 		
 		# Menüeintrag zum Beenden
 		exit = QAction(QIcon("icons/exit.gif"), "&Beenden", self)
@@ -91,9 +91,17 @@ class MyForm(QMainWindow):
 		menubar = self.menuBar()
 		file = menubar.addMenu("&Datei")
 		file.addAction(open)
-		file.addAction(reopen)
+		file.addAction(self.menuFileReopen)
 		file.addSeparator()
 		file.addAction(exit)
+
+		# Eigene Trigger
+		self.connect(self, SIGNAL("imageLoaded"), self.notifyFileLoaded)
+
+	def notifyFileLoaded(self):
+		self.setStatusTip("Datei geladen.")
+		if( self.lastOpenedFile != None):
+			self.menuFileReopen.setEnabled(True)
 
 	def getUserHomeDir(self):
 		return str(os.environ.get('HOME'))
@@ -131,6 +139,7 @@ class MyForm(QMainWindow):
 	def openImage(self, fileName):
 		self.displayArea.open(str(fileName))
 		self.displayArea.repaint()
+		self.emit(SIGNAL("imageLoaded"), ())
 
 	def closeEvent(self, event):
 		# TODO Nachfragen, ob das Programm beendet werden soll per Optionen ein- oder ausschalten
