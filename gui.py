@@ -12,6 +12,7 @@ from PyQt4.QtCore import *
 class QDisplay(QLabel):
 	# Member
 	image = None
+	firstImage = True
 
 	def __init__(self, parent=None):
 		"""Initialisiert die Klasse"""
@@ -33,34 +34,46 @@ class QDisplay(QLabel):
 		
 	def open(self, filename):
 		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
-		
-		print("Opening file: " + filename)
 		# load an image using PIL, first read it
 		self.PILimage  = Image.open(str(filename))		
-		print("File opened.")
 		self.__PIL2Qt()
 		
 	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
-		"""Wandelt ein Bild der PIL in ein QImage um"""
-	
-		print("Converting file ...")
-		
-		# I have only tested the jpeg encoder, there are others, see
+		"""Wandelt ein Bild der PIL in ein QImage um"""	
 		# http://mail.python.org/pipermail/image-sig/2004-September/002908.html
 		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
+	
+		if( self.firstImage == True ):
+			self.firstImage = False
+			size = QSize( self.PILimage.size[0], self.PILimage.size[1] )
+			self.setSize(size)
+		
 		self.image.loadFromData(QByteArray(PILstring))
-		self.resize(self.image.size())
-
-		print("File converted and image set.")
 		
 	def paintEvent(self, Event):
 		"""Zeichnet das Bild erneut"""
-	
 		painter = QPainter(self)
+
+		if(self.image == None): return
+
+		# Hole Skalierung
+		# TODO: Division durch 0 testen
+		scale_x = float(self.size().width()) / self.image.size().width()
+		scale_y = float(self.size().height()) / self.image.size().height()	
+		painter.scale(scale_x, scale_y)
+		
 		painter.drawImage(0, 0, self.image)
 		
-	def setSize(self, size):
+	def setSize(self, size, sizey=None):
 		"""Setzt Größe des Anzeigeelementes"""
+		if( sizey != None):
+			size = QSize(size, sizey)
+		self.resize(size)
+		return
+		
+	def setFullSize(self):
+		"""Setzt Größe des Anzeigeelementes auf die Größe des Bildes"""
+		self.resize(self.image.size())
 		return
 
 
@@ -76,7 +89,6 @@ class MyForm(QMainWindow):
 	
 	def __init__(self, parent=None):
 		"""Initialisiert das Anwendungsfenster"""
-	
 		QMainWindow.__init__(self, parent)
 
 		# Fensterstatus setzen
@@ -97,6 +109,9 @@ class MyForm(QMainWindow):
 
 		# Menü erstellen
 		self.buildMenu()
+		
+		# Weitere Hooks
+		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
 	
 	def buildMenu(self):
 		"""Erstellt die Menüleiste und setzt die Shortcuts"""
@@ -136,7 +151,6 @@ class MyForm(QMainWindow):
 		self.addAction(menuFileExit)
 		file.addAction(menuFileExit)
 		
-		
 		# Vollbild-Menüeintrag
 		menuViewFullScreen = QAction(QIcon("icons/Loading.png"), "&Vollbild", self)
 		menuViewFullScreen.setShortcut("RETURN")
@@ -172,15 +186,11 @@ class MyForm(QMainWindow):
 			self.statusBar().show()
 	
 	def notifyFileLoaded(self):
-		"""Wird gerufen, wenn eine Datei geladen wurde"""
-	
+		"""Wird gerufen, wenn eine Datei geladen wurde"""	
 		self.setStatusTip("Datei geladen.")
-		#if( self.lastOpenedFile != None):
-		#	self.menuFileReopen.setEnabled(True)
 		
 	def getUserHomeDir(self):
 		"""Holt das Home-Verzeichnis des aktuellen Nutzers"""
-	
 		return str(os.environ.get('HOME'))
 
 	def openImageDialog(self):
