@@ -52,7 +52,7 @@ class QDisplay(QLabel):
 		painter.drawImage(0, 0, self.image)
 		
 	def setSize(self, size):
-		
+		return
 
 
 
@@ -138,7 +138,7 @@ class MyForm(QMainWindow):
 		view = menuBar.addMenu("&Ansicht")
 		view.addAction(self.sizeToFit)
 		self.addAction(self.sizeToFit)
-		view.addAction(fullScreen)
+		#view.addAction(fullScreen)
 		self.addAction(fullScreen)
 
 		# Eigene Trigger
