@@ -304,18 +304,47 @@ class ApplicationWindow(QMainWindow):
 
 	def getStartDir(self):
 		"""Liefert das Startverzeichnis der Anwendung, wie es über die Kommandozeile gesetzt wurde"""
-		startDir = self.cmdLineOptions.directory
+		startDir = str(self.cmdLineOptions.directory)
 		if( os.path.isdir(startDir) ):
 			startDir = os.path.normpath(startDir)
 		else:
-			startDir = os.path.dirname(str(self.cmdLineOptions.directory))
-		return startDir
+			startDir = os.path.dirname(startDir)
+		return str(startDir)
+
+	def getUserPicturesDir(self):
+		"""Holt den Pfad des Benutzer-Bilderverzeichnisses"""
+		# http://win32com.goermezer.de/content/view/191/188/
+		# http://www.blueskyonmars.com/2005/08/05/finding-a-users-my-documents-folder-on-windows/
+		# TODO: Erweitern auf Windows, MacOS, ...
+		user_home_dir = self.getUserHomeDir()
+		conf_home = user_home_dir + "/.config"
+		if os.environ.has_key("XDG_CONFIG_HOME"):
+			conf_home = os.environ["XDG_CONFIG_HOME"]
+		
+		userdirs_path = str(conf_home + "/user-dirs.dirs")
+		if os.path.exists(userdirs_path) and os.path.isfile(userdirs_path):
+			userdirs_file = open(userdirs_path, "r")
+			lines = userdirs_file.readlines()
+			userdirs_file.close()
+			for line in lines:
+				if line.startswith("XDG_PICTURES_DIR"):
+					pictures_dir = line.split("=", 1)[1].strip()
+					if( pictures_dir.startswith("\"")):
+						pictures_dir = pictures_dir[1:-1]
+					pictures_dir = pictures_dir.replace("$HOME", user_home_dir)
+					pictures_dir = pictures_dir.replace("~/", user_home_dir + "/")
+					return str(pictures_dir)
+		return None
 
 	def openImageDialog(self):
 		"""Zeigt den \"Bild Laden\"-Dialog an"""
 	
+		self.getUserPicturesDir()
+	
 		# Startverzeichnis holen
 		startDir = self.getStartDir()
+		if not startDir:
+			startDir = self.getUserPicturesDir()
 		if not startDir:
 			startDir = self.getUserHomeDir()
 		if( self.lastOpenedFile != None and not self.isTempFile(self.lastOpenedFile) ):
