@@ -15,23 +15,34 @@ class DisplayArea(QLabel):
 	# Member
 	image = None
 	firstImage = True
+	imageSize = QSize(0, 0)
+	zoomFactor = 1.0
+	
+	# Konstanten
+	MAX_ZOOM = 10.0
+	MIN_ZOOM = 0.1
+	ZOOM_STEP = 0.1
 
 	def __init__(self, parent=None):
 		"""Initialisiert die Klasse"""
 		QWidget.__init__(self, parent)
 			
 		# Hintergrundfarbe setzen
-		self.setAutoFillBackground(True)
-		palette = self.palette()
-		palette.setColor(QPalette.Background, QColor(32, 32, 32))
-		self.setPalette(palette)
+		#self.setAutoFillBackground(True)
+		#palette = self.palette()
+		#palette.setColor(QPalette.Background, QColor(32, 32, 32))
+		#self.setPalette(palette)
 		
 		# Tweaking
-		self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-		self.setScaledContents(True)
+		#self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+		#self.setScaledContents(True)
 		
 		# Variablen setzen
 		self.image = QImage()
+		
+	def __del__(self):
+		if( self.image ):
+			self.image.__del__()
 		
 	def loadFromFile(self, filename):
 		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
@@ -45,38 +56,63 @@ class DisplayArea(QLabel):
 		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
 		if( not PILstring ): return False
 	
-		if( self.firstImage == True ):
-			self.firstImage = False
-			size = QSize( self.PILimage.size[0], self.PILimage.size[1] )
-			self.setSize(size)
+		#if( self.firstImage == True ):
+		#	self.firstImage = False
+		self.imageSize = QSize( self.PILimage.size[0], self.PILimage.size[1] )
+		#self.resize(self.imageSize)
+		self.setMinimumSize( self.imageSize.width(), self.imageSize.height() ); # Zoom-Faktoren beachten
 		
 		return self.image.loadFromData(QByteArray(PILstring))
 		
 	def paintEvent(self, Event):
 		"""Zeichnet das Bild erneut"""
+		if(self.image == None): return
 		painter = QPainter(self)
 
-		if(self.image == None): return
+		offset_x = 0
+		zoomed_width = self.imageSize.width()*self.zoomFactor
+		if( self.width() > zoomed_width ):
+			offset_x = (self.width() - zoomed_width) / 2
 
-		# Hole Skalierung
-		# TODO: Division durch 0 testen
-		scale_x = float(self.size().width()) / self.image.size().width()
-		scale_y = float(self.size().height()) / self.image.size().height()	
-		painter.scale(scale_x, scale_y)
+		offset_y = 0
+		zoomed_height = self.imageSize.height()*self.zoomFactor
+		if( self.height() > zoomed_height ):
+			offset_y = (self.height() - zoomed_height) / 2
+
+		painter.save()
+		painter.translate(offset_x, offset_y)
+		painter.scale(self.zoomFactor, self.zoomFactor)
 		
-		painter.drawImage(0, 0, self.image)
+		painter.drawImage(0, 0, self.image)	
+		painter.restore()
+	
+	def setZoomFactor(self, factor):
+		"""Setzt den Zoom-Faktor des Bildes"""
+		if( self.zoomFactor == factor ): return
 		
-	def setSize(self, size, sizey=None):
-		"""Setzt Größe des Anzeigeelementes"""
-		if( sizey != None):
-			size = QSize(size, sizey)
-		self.resize(size)
-		return
+		self.zoomFactor = factor
+		self.emit(SIGNAL("zoomFactorChanged(float)"), self.zoomFactor)
 		
-	def setFullSize(self):
-		"""Setzt Größe des Anzeigeelementes auf die Größe des Bildes"""
-		self.resize(self.image.size())
-		return
+		w = self.imageSize.width() * self.zoomFactor
+		h = self.imageSize.height() * self.zoomFactor
+		self.setMinimumSize(w, h)
+		self.resize(self.parent().width(), self.parent().height())
+		
+		self.repaint()
+	
+	def zoomIn(self):
+		"""Zoomt um einen festen Betrag ein"""
+		newZoomFactor = self.zoomFactor + self.ZOOM_STEP
+		if( newZoomFactor >= self.MAX_ZOOM ):
+			newZoomFactor = self.MAX_ZOOM
+		self.setZoomFactor(newZoomFactor)
+		
+	def zoomOut(self):
+		"""Zoomt um einen festen Betrag aus"""
+		newZoomFactor = self.zoomFactor - self.ZOOM_STEP
+		if( newZoomFactor <= self.MIN_ZOOM ):
+			newZoomFactor = self.MIN_ZOOM
+		self.setZoomFactor(newZoomFactor)
 
 class ImageSource:
 	Unknown = 0
@@ -129,7 +165,9 @@ class ApplicationWindow(QMainWindow):
 		
 		# Scroll Area
 		self.scrollArea = QScrollArea(self)
+		# TODO: Benutzerdefinierte Farbe
 		self.scrollArea.setBackgroundRole(QPalette.Dark)
+		self.scrollArea.setWidgetResizable(True)
 		self.scrollArea.setWidget(self.displayArea)
 		self.setCentralWidget(self.scrollArea)
 
@@ -187,6 +225,16 @@ class ApplicationWindow(QMainWindow):
 		menuViewFullScreen.setCheckable(True)
 		menuViewFullScreen.setChecked(bool(self.cmdLineOptions.fullScreen))
 		menuViewFullScreen.connect(menuViewFullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
+		
+		menuViewZoomIn = QAction(u"Ver&größern", self)
+		menuViewZoomIn.setShortcut("+")
+		menuViewZoomIn.setStatusTip(u"Vergrößert die Ansicht")
+		menuViewZoomIn.connect(menuViewZoomIn, SIGNAL("triggered()"), self.displayArea.zoomIn)
+
+		menuViewZoomOut = QAction(u"Ver&kleinern", self)
+		menuViewZoomOut.setShortcut("-")
+		menuViewZoomOut.setStatusTip(u"Verkelinert die Ansicht")
+		menuViewZoomOut.connect(menuViewZoomOut, SIGNAL("triggered()"), self.displayArea.zoomOut)
 		
 		# Anzeigemodi
 		menuViewWindowToImageSize = QAction("Fenster ans Bild anpassen (1:1, empfo&hlen)", self)
@@ -252,8 +300,18 @@ class ApplicationWindow(QMainWindow):
 		viewOptionsWindowedGroup.connect(viewOptionsWindowedGroup, SIGNAL("triggered(QAction*)"), self.trigger)
 		viewOptionsWindowed.addActions(viewOptionsWindowedGroup.actions())
 	
+		view.addSeparator()
+		self.addAction(menuViewZoomIn)
+		view.addAction(menuViewZoomIn)
+		self.addAction(menuViewZoomOut)
+		view.addAction(menuViewZoomOut)
+	
 	def trigger(self, action):
 		print "Selected Menu: " + action.property("tag").toString()
+	
+	def resizeEvent(self, event):
+		#self.displayArea.center()
+		self.displayArea.repaint()	
 	
 	def toggleFullScreen(self):
 		"""Schaltet zwischen Vollbild und Normalansicht um"""
@@ -339,8 +397,6 @@ class ApplicationWindow(QMainWindow):
 	def openImageDialog(self):
 		"""Zeigt den \"Bild Laden\"-Dialog an"""
 	
-		self.getUserPicturesDir()
-	
 		# Startverzeichnis holen
 		startDir = self.getStartDir()
 		if not startDir:
@@ -351,6 +407,7 @@ class ApplicationWindow(QMainWindow):
 			startDir = os.path.dirname(str(self.lastOpenedFile))
 		
 		# Dateifilter definieren
+		# TODO: Sinnvolle Lösung finden, in aller Regel durch eine Liste bekannter Typen
 		filters = QStringList()
 		filters << "Bilder (*.jpg *.gif *.png *.xpm)"
 		filters << "Alle Dateien (*)"
