@@ -32,10 +32,10 @@ class DisplayArea(QLabel):
 		# Variablen setzen
 		self.image = QImage()
 		
-	def open(self, filename):
+	def loadFromFile(self, filename):
 		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
 		# load an image using PIL, first read it
-		self.PILimage  = Image.open(str(filename))		
+		self.PILimage  = Image.open(filename)
 		self.__PIL2Qt()
 		
 	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
@@ -77,7 +77,7 @@ class DisplayArea(QLabel):
 		return
 
 
-class MyForm(QMainWindow):
+class ApplicationWindow(QMainWindow):
 	# Kontanten
 	APPNAME = "Bildbetrachter"
 	APPVERSION = "0.1"
@@ -91,12 +91,14 @@ class MyForm(QMainWindow):
 	scrollArea = None
 	displayArea = None
 	cmdLineOptions = None
+	cmdLineArgs = []
+	tempFiles = []
 	
 	def __init__(self, parent=None):
 		"""Initialisiert das Anwendungsfenster"""
 		QMainWindow.__init__(self, parent)
 
-		# Kommandozeilenoptionen
+		# Kommandozeilenoptionen, Teil 1
 		self.buildCmdLineParser()
 
 		# Fensterstatus setzen
@@ -129,6 +131,9 @@ class MyForm(QMainWindow):
 		
 		# Weitere Hooks
 		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
+		
+		# Kommandozeilenoptionen, Teil 2
+		self.openFileFromCmdLine()
 		
 	def buildMenu(self):
 		"""Erstellt die Menüleiste und setzt die Shortcuts"""
@@ -303,12 +308,55 @@ class MyForm(QMainWindow):
 		"""Lädt ein Bild, dessen Pfad bekannt ist"""
 	
 		try:
-			self.displayArea.open(str(fileName))
+			self.displayArea.loadFromFile(str(fileName))
 			self.displayArea.repaint()
-			self.lastOpenedFile = fileName			
+			self.lastOpenedFile = fileName
 			self.emit(SIGNAL("imageLoaded(bool)"), (True))
+			return True
 		except:
-			return
+			return False
+			
+	def loadImageFromWeb(self, url):
+		"""Lädt ein Bild aus dem Netz"""
+		# http://docs.python.org/lib/module-urllib2.html
+		import urllib2, tempfile
+		image = None; tempFile = None; tempFileName = None
+		try:
+			# TODO: Nachfragen, bevor ein großes Bild heruntergeladen wird
+			url = str(url)
+			image = urllib2.urlopen(str(url))
+			
+			(tempFile, tempFileName) = tempfile.mkstemp(".fromweb", "iview-")
+			tempFile = open(tempFileName, "wb")
+		
+			# Copy web stream to disk (in chunks)
+			while True:
+				data = image.read(1024)
+				if( data ):
+					tempFile.write(data)
+				else:
+					break
+					
+		except urllib2.URLError:
+			# TODO: Testen, ob die URL ungültig ist (404 oder so)
+			print "Problem beim Laden der URL: Netzwerk- oder Serverfehler."
+			return False
+		except:
+			print "Fehler beim Speichern des Bildes: ", sys.exc_info()
+			return False
+		finally:
+			if(image): image.close()		
+			if(tempFile): tempFile.close()			
+		# TODO: Weitere Exceptions abgreifen
+		
+		# Temporäre Datei merken, um sie zum Programmende zu löschen
+		self.tempFiles.append( (tempFileName, url) )
+		
+		# Bild laden
+		if( tempFileName ):
+			self.loadImageFromFile( tempFileName )
+		
+		return True
 
 	def closeEvent(self, event):
 		"""Wird gerufen, wenn die Anwendung geschlossen werden soll"""
@@ -320,6 +368,10 @@ class MyForm(QMainWindow):
 				event.accept()
 			else:
 				event.ignore()
+				return
+		
+		# Aufräumen
+		if( self.cmdLineOptions.tempClean ): self.deleteTempFiles()
 
 	def center(self):
 		"""Zentriert die Anwendung auf dem Bildschirm"""
@@ -349,6 +401,9 @@ class MyForm(QMainWindow):
 				fileName = url.toLocalFile()
 				if( fileName != "" ):
 					event.acceptProposedAction()
+				else:
+					# TODO: Weiteres testen, ob das hier eine Web-URL ist
+					event.acceptProposedAction()
 	
 	def dragDropEvent(self, event):
 		"""Handhabt Drop-Events"""
@@ -360,6 +415,11 @@ class MyForm(QMainWindow):
 				if( fileName != "" ):
 					event.acceptProposedAction()
 					self.loadImageFromFile(fileName)
+				else:
+					# TODO: Weiteres testen, ob das hier eine Web-URL ist
+					# TODO: Evtl. direkt auf den Programmcache zugreifen, wenn möglich
+					event.acceptProposedAction()
+					self.loadImageFromWeb(url.toString())
 		
 	def buildCmdLineParser(self):
 		"""Erstellt den Kommandozeilenoptionsparser"""
@@ -380,11 +440,33 @@ class MyForm(QMainWindow):
 		cmdOptParser.add_option("-f", "--fullscreen", dest="fullScreen", 
 								action="store_true", default=False,
 								help="start in fullscreen mode")
+		cmdOptParser.add_option("--no-tempclean", dest="tempClean", 
+								action="store_false", default=True,
+								help="don't delete cached files when exiting")
 		
 		# Parsen
-		(self.cmdLineOptions, args)	= cmdOptParser.parse_args()
-		return args
-
+		(self.cmdLineOptions, self.cmdLineArgs)	= cmdOptParser.parse_args()	
+		return self.cmdLineArgs
+		
+	def openFileFromCmdLine(self):
+		"""Holt den Bildpfad von der Kommandozeile"""
+		if( len(self.cmdLineArgs) > 0 ):
+			param = self.cmdLineArgs[0]
+			url = QUrl(param)
+			if( url.isEmpty() ): return
+			localFile = url.toLocalFile()
+			if( localFile ):
+				self.loadImageFromFile( localFile )
+			else:
+				self.loadImageFromWeb( url.toString() )
+				
+	def deleteTempFiles(self):
+		"""Löscht alle geöffneten temporären Dateien"""
+		for tmpFile in self.tempFiles:
+			try:
+				os.remove(tmpFile[0])
+			except:
+				continue
 
 
 # Die Anwendung nur starten, wenn die Source nicht als Modul geladen wird
@@ -396,7 +478,7 @@ if( __name__ == "__main__" ):
 	translator.load("qt_de", "/usr/share/qt4/translations")
 	app.installTranslator(translator)
 
-	form = MyForm()
+	form = ApplicationWindow()
 	form.show()
 
 	sys.exit(app.exec_())
