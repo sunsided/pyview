@@ -172,11 +172,15 @@ class ApplicationWindow(QMainWindow):
 		self.__class__.dropEvent = self.dragDropEvent
 			
 		# Das Display-Widget
-		if( self.cmdLineOptions.openGL ):
-			print "Using OpenGL rendering engine."
+		openGLsupport = QGLFormat.hasOpenGL()
+		if( self.cmdLineOptions.openGL and openGLsupport):
+			print "Using OpenGL engine."
 			self.displayArea = GLDisplayArea() #DisplayArea()
 		else:
-			print "Not using OpenGL rendering engine."
+			if( openGLsupport ):
+				print "Not using OpenGL engine."
+			else:
+				print "Not using OpenGL engine: OpenGL rendering not supported."
 			self.displayArea = DisplayArea()
 		
 		# Scroll Area
