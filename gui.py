@@ -76,6 +76,10 @@ class DisplayArea(QLabel):
 		self.resize(self.image.size())
 		return
 
+class ImageSource:
+	Unknown = 0
+	LocalFile = 1
+	RemoteFile = 2
 
 class ApplicationWindow(QMainWindow):
 	# Kontanten
@@ -131,6 +135,7 @@ class ApplicationWindow(QMainWindow):
 		
 		# Weitere Hooks
 		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
+		self.connect(self, SIGNAL("imageLoading(bool, int)"), self.notifyFileLoading)
 		
 		# Kommandozeilenoptionen, Teil 2
 		self.openFileFromCmdLine()
@@ -261,8 +266,19 @@ class ApplicationWindow(QMainWindow):
 			self.menuBar().show()
 			self.statusBar().show()
 	
+	def notifyFileLoading(self, loading, source):
+		"""Wird gerufen, wenn eine Datei geladen wird"""
+		if( not loading ): return
+		if( source == 0 or source == 1 ):
+			print "Loading file ..."
+			self.setStatusTip("Lade Datei ...")
+		else:
+			print "Loading remote file..."
+			self.setStatusTip("Lade entfernte Datei ...")
+	
 	def notifyFileLoaded(self):
 		"""Wird gerufen, wenn eine Datei geladen wurde"""	
+		print "File loaded."
 		self.setStatusTip("Datei geladen.")
 		
 	def getUserHomeDir(self):
@@ -306,22 +322,34 @@ class ApplicationWindow(QMainWindow):
 
 	def loadImageFromFile(self, fileName):
 		"""Lädt ein Bild, dessen Pfad bekannt ist"""
-	
+		self.emit(SIGNAL("imageLoading(bool,int)"), True, ImageSource.LocalFile)
+		return self.internalLoadImageFromFile(fileName, ImageSource.LocalFile)
+			
+	def internalLoadImageFromFile(self, fileName, source):
+		"""Lädt ein Bild, dessen Pfad bekannt ist"""
+
 		try:
 			self.displayArea.loadFromFile(str(fileName))
 			self.displayArea.repaint()
 			self.lastOpenedFile = fileName
-			self.emit(SIGNAL("imageLoaded(bool)"), (True))
+			self.emit(SIGNAL("imageLoaded(bool)"), True)
 			return True
 		except:
+			print "Could not load image: ", sys.exc_info()
 			return False
+		finally:
+			self.emit(SIGNAL("imageLoading(bool,int)"), False, int(source))
 			
 	def loadImageFromWeb(self, url):
 		"""Lädt ein Bild aus dem Netz"""
+		self.emit(SIGNAL("imageLoading(bool,int)"), True, ImageSource.RemoteFile)
+		
 		# http://docs.python.org/lib/module-urllib2.html
 		import urllib2, tempfile
 		image = None; tempFile = None; tempFileName = None
 		try:
+			self.emit(SIGNAL("downloadingFile(bool)"), True)
+		
 			# TODO: Nachfragen, bevor ein großes Bild heruntergeladen wird
 			url = str(url)
 			image = urllib2.urlopen(str(url))
@@ -339,14 +367,15 @@ class ApplicationWindow(QMainWindow):
 					
 		except urllib2.URLError:
 			# TODO: Testen, ob die URL ungültig ist (404 oder so)
-			print "Problem beim Laden der URL: Netzwerk- oder Serverfehler."
+			print "Problem beim Laden der URL: Netzwerk- oder Serverfehler: ", sys.exc_info()
 			return False
 		except:
 			print "Fehler beim Speichern des Bildes: ", sys.exc_info()
 			return False
 		finally:
 			if(image): image.close()		
-			if(tempFile): tempFile.close()			
+			if(tempFile): tempFile.close()		
+			self.emit(SIGNAL("downloadingFile(bool)"), False)
 		# TODO: Weitere Exceptions abgreifen
 		
 		# Temporäre Datei merken, um sie zum Programmende zu löschen
@@ -354,7 +383,7 @@ class ApplicationWindow(QMainWindow):
 		
 		# Bild laden
 		if( tempFileName ):
-			self.loadImageFromFile( tempFileName )
+			self.internalLoadImageFromFile( tempFileName, ImageSource.RemoteFile )
 		
 		return True
 
