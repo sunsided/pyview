@@ -26,16 +26,6 @@ class DisplayArea(QLabel):
 	def __init__(self, parent=None):
 		"""Initialisiert die Klasse"""
 		QWidget.__init__(self, parent)
-			
-		# Hintergrundfarbe setzen
-		#self.setAutoFillBackground(True)
-		#palette = self.palette()
-		#palette.setColor(QPalette.Background, QColor(32, 32, 32))
-		#self.setPalette(palette)
-		
-		# Tweaking
-		#self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-		#self.setScaledContents(True)
 		
 		# Variablen setzen
 		self.image = QImage()
@@ -64,7 +54,7 @@ class DisplayArea(QLabel):
 		
 		return self.image.loadFromData(QByteArray(PILstring))
 		
-	def paintEvent(self, Event):
+	def paintEvent(self, event):
 		"""Zeichnet das Bild erneut"""
 		if(self.image == None): return
 		painter = QPainter(self)
@@ -83,7 +73,9 @@ class DisplayArea(QLabel):
 		painter.translate(offset_x, offset_y)
 		painter.scale(self.zoomFactor, self.zoomFactor)
 		
-		painter.drawImage(0, 0, self.image)	
+		exposedRect = painter.matrix().inverted()[0].mapRect(event.rect()).adjusted(-1, -1, 1, 1)
+		painter.drawImage(exposedRect, self.image, exposedRect)
+		#painter.drawImage(0, 0, self.image)
 		painter.restore()
 	
 	def setZoomFactor(self, factor):
@@ -113,6 +105,10 @@ class DisplayArea(QLabel):
 		if( newZoomFactor <= self.MIN_ZOOM ):
 			newZoomFactor = self.MIN_ZOOM
 		self.setZoomFactor(newZoomFactor)
+		
+	def zoomFull(self):
+		"""Setzt den Zoom auf 100%"""
+		self.setZoomFactor(1.0)
 
 class ImageSource:
 	Unknown = 0
@@ -178,8 +174,6 @@ class ApplicationWindow(QMainWindow):
 		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
 		self.connect(self, SIGNAL("imageLoading(bool, int, bool)"), self.notifyFileLoading)
 		
-		print "initializer done"
-		
 	def buildMenu(self):
 		"""Erstellt die Menüleiste und setzt die Shortcuts"""
 		
@@ -233,8 +227,13 @@ class ApplicationWindow(QMainWindow):
 
 		menuViewZoomOut = QAction(u"Ver&kleinern", self)
 		menuViewZoomOut.setShortcut("-")
-		menuViewZoomOut.setStatusTip(u"Verkelinert die Ansicht")
+		menuViewZoomOut.setStatusTip(u"Verkleinert die Ansicht")
 		menuViewZoomOut.connect(menuViewZoomOut, SIGNAL("triggered()"), self.displayArea.zoomOut)
+
+		menuViewZoomFull = QAction(u"&Originalgröße", self)
+		menuViewZoomFull.setShortcut("STRG+H")
+		menuViewZoomFull.setStatusTip("Zoomt die Ansicht auf 100%")
+		menuViewZoomFull.connect(menuViewZoomFull, SIGNAL("triggered()"), self.displayArea.zoomFull)
 		
 		# Anzeigemodi
 		menuViewWindowToImageSize = QAction("Fenster ans Bild anpassen (1:1, empfo&hlen)", self)
@@ -305,6 +304,8 @@ class ApplicationWindow(QMainWindow):
 		view.addAction(menuViewZoomIn)
 		self.addAction(menuViewZoomOut)
 		view.addAction(menuViewZoomOut)
+		self.addAction(menuViewZoomFull)
+		view.addAction(menuViewZoomFull)
 	
 	def trigger(self, action):
 		print "Selected Menu: " + action.property("tag").toString()
@@ -351,17 +352,22 @@ class ApplicationWindow(QMainWindow):
 					print "Canceled loading remote file."
 					self.setStatusTip("Laden von entfernter Datei abgebrochen.")
 	
-	def notifyFileLoaded(self):
+	def notifyFileLoaded(self, state):
 		"""Wird gerufen, wenn eine Datei geladen wurde"""	
 		print "File loaded."
+		if not state: return
+		filename = os.path.basename(str(self.lastOpenedFile))
+		self.setWindowTitle(filename + " - " + self.APPNAME)
 		self.setStatusTip("Datei geladen.")
 		
 	def getUserHomeDir(self):
 		"""Holt das Home-Verzeichnis des aktuellen Nutzers"""
+		# TODO: Windows-sicher machen
 		return str(os.environ.get('HOME'))
 
 	def getStartDir(self):
-		"""Liefert das Startverzeichnis der Anwendung, wie es über die Kommandozeile gesetzt wurde"""
+		"""Liefert das Startverzeichnis der Anwendung, wie es über die 
+		Kommandozeile gesetzt wurde"""
 		startDir = str(self.cmdLineOptions.directory)
 		if( os.path.isdir(startDir) ):
 			startDir = os.path.normpath(startDir)
