@@ -8,6 +8,7 @@
 import sys, os, Image
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+from optparse import OptionParser
 
 class DisplayArea(QLabel):
 	# Member
@@ -16,7 +17,6 @@ class DisplayArea(QLabel):
 
 	def __init__(self, parent=None):
 		"""Initialisiert die Klasse"""
-	
 		QWidget.__init__(self, parent)
 			
 		# Hintergrundfarbe setzen
@@ -86,17 +86,25 @@ class MyForm(QMainWindow):
 	# Objekte
 	scrollArea = None
 	displayArea = None
+	cmdLineOptions = None
 	
 	def __init__(self, parent=None):
 		"""Initialisiert das Anwendungsfenster"""
 		QMainWindow.__init__(self, parent)
 
+		# Kommandozeilenoptionen
+		self.buildCmdLineParser()
+
 		# Fensterstatus setzen
-		self.resize(640, 480)
 		self.setWindowTitle("Testanwendung")
 		self.setWindowIcon(QIcon("icons/icon.gif"))
+		self.resize(640, 480)
 		self.center()
 		self.statusBar()
+
+		# Vollbildmodus switchen
+		if( self.cmdLineOptions.fullScreen ):
+			self.toggleFullScreen()
 		
 		# Drag&Drop initialisieren
 		self.setAcceptDrops(True)
@@ -161,6 +169,7 @@ class MyForm(QMainWindow):
 		menuViewFullScreen.setShortcut("RETURN")
 		menuViewFullScreen.setStatusTip("Wechselt in den Vollbildmodus")
 		menuViewFullScreen.setCheckable(True)
+		menuViewFullScreen.setChecked(bool(self.cmdLineOptions.fullScreen))
 		menuViewFullScreen.connect(menuViewFullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
 		
 		# Anzeigemodi
@@ -325,7 +334,7 @@ class MyForm(QMainWindow):
 			self.displayArea.adjustSize()
 		else:
 			self.scrollArea.setWidgetResizable(True)
-		
+	
 	def dragEnterEvent(self, event):
 		"""Handhabt DragEnter-Events"""
 		#if event.mimeData().hasImage() == True:
@@ -336,7 +345,7 @@ class MyForm(QMainWindow):
 				fileName = url.toLocalFile()
 				if( fileName != "" ):
 					event.acceptProposedAction()
-		
+	
 	def dragDropEvent(self, event):
 		"""Handhabt Drop-Events"""
 		if event.mimeData().hasUrls() == True:
@@ -347,6 +356,16 @@ class MyForm(QMainWindow):
 				if( fileName != "" ):
 					event.acceptProposedAction()
 					self.openImage(fileName)
+		
+	def buildCmdLineParser(self):
+		"""Erstellt den Kommandozeilenoptionsparser"""
+		# http://docs.python.org/lib/module-optparse.html
+		cmdOptParser = OptionParser()
+		cmdOptParser.add_option("-f", "--fullscreen", dest="fullScreen", default=False,
+								help="start in fullscreen mode")
+		(self.cmdLineOptions, args)	= cmdOptParser.parse_args()
+		return args
+
 
 
 # Die Anwendung nur starten, wenn die Source nicht als Modul geladen wird
@@ -357,6 +376,8 @@ if( __name__ == "__main__" ):
 	translator = QTranslator()
 	translator.load("qt_de", "/usr/share/qt4/translations")
 	app.installTranslator(translator)
+
+	print sys.argv[1:]
 
 	form = MyForm()
 	form.show()
