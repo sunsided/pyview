@@ -36,19 +36,20 @@ class DisplayArea(QLabel):
 		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
 		# load an image using PIL, first read it
 		self.PILimage  = Image.open(filename)
-		self.__PIL2Qt()
+		return self.__PIL2Qt()
 		
 	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
 		"""Wandelt ein Bild der PIL in ein QImage um"""	
 		# http://mail.python.org/pipermail/image-sig/2004-September/002908.html
 		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
+		if( not PILstring ): return False
 	
 		if( self.firstImage == True ):
 			self.firstImage = False
 			size = QSize( self.PILimage.size[0], self.PILimage.size[1] )
 			self.setSize(size)
 		
-		self.image.loadFromData(QByteArray(PILstring))
+		return self.image.loadFromData(QByteArray(PILstring))
 		
 	def paintEvent(self, Event):
 		"""Zeichnet das Bild erneut"""
@@ -135,7 +136,7 @@ class ApplicationWindow(QMainWindow):
 		
 		# Weitere Hooks
 		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
-		self.connect(self, SIGNAL("imageLoading(bool, int)"), self.notifyFileLoading)
+		self.connect(self, SIGNAL("imageLoading(bool, int, bool)"), self.notifyFileLoading)
 		
 		# Kommandozeilenoptionen, Teil 2
 		self.openFileFromCmdLine()
@@ -266,15 +267,30 @@ class ApplicationWindow(QMainWindow):
 			self.menuBar().show()
 			self.statusBar().show()
 	
-	def notifyFileLoading(self, loading, source):
+	def notifyFileLoading(self, loading, source, success):
 		"""Wird gerufen, wenn eine Datei geladen wird"""
-		if( not loading ): return
 		if( source == 0 or source == 1 ):
-			print "Loading file ..."
-			self.setStatusTip("Lade Datei ...")
+			if( loading ):
+				print "Loading file ..."
+				self.setStatusTip("Lade Datei ...")
+			else:
+				if( success ):
+					print "Done loading of file."
+					self.setStatusTip("Laden von Datei abgeschlossen.")
+				else:
+					print "Canceled loading of file."
+					self.setStatusTip("Laden von Datei abgebrochen.")
 		else:
-			print "Loading remote file..."
-			self.setStatusTip("Lade entfernte Datei ...")
+			if( loading ):
+				print "Loading remote file..."
+				self.setStatusTip("Lade entfernte Datei ...")
+			else:
+				if( success ):
+					print "Done loading remote file."
+					self.setStatusTip("Laden von entfernter Datei abgeschlossen.")
+				else:
+					print "Canceled loading remote file."
+					self.setStatusTip("Laden von entfernter Datei abgebrochen.")
 	
 	def notifyFileLoaded(self):
 		"""Wird gerufen, wenn eine Datei geladen wurde"""	
@@ -322,14 +338,15 @@ class ApplicationWindow(QMainWindow):
 
 	def loadImageFromFile(self, fileName):
 		"""Lädt ein Bild, dessen Pfad bekannt ist"""
-		self.emit(SIGNAL("imageLoading(bool,int)"), True, ImageSource.LocalFile)
+		self.emit(SIGNAL("imageLoading(bool,int,bool)"), True, ImageSource.LocalFile, False)
 		return self.internalLoadImageFromFile(fileName, ImageSource.LocalFile)
 			
 	def internalLoadImageFromFile(self, fileName, source):
 		"""Lädt ein Bild, dessen Pfad bekannt ist"""
 
+		success = False
 		try:
-			self.displayArea.loadFromFile(str(fileName))
+			success = self.displayArea.loadFromFile(str(fileName))
 			self.displayArea.repaint()
 			self.lastOpenedFile = fileName
 			self.emit(SIGNAL("imageLoaded(bool)"), True)
@@ -338,22 +355,49 @@ class ApplicationWindow(QMainWindow):
 			print "Could not load image: ", sys.exc_info()
 			return False
 		finally:
-			self.emit(SIGNAL("imageLoading(bool,int)"), False, int(source))
-			
+			self.emit(SIGNAL("imageLoading(bool,int,bool)"), False, int(source), success)
+	
+	def canHandleMimeType(self, mimetype):
+		"""Testet, ob eine Datei eines bestimmten Mime-Typs geladen werden kann"""
+		mimetype = str(mimetype).lower()
+		if( mimetype.startswith("image/")): return True
+		if( mimetype.startswith("application/octet-stream") ): return True
+		return False
+	
 	def loadImageFromWeb(self, url):
 		"""Lädt ein Bild aus dem Netz"""
-		self.emit(SIGNAL("imageLoading(bool,int)"), True, ImageSource.RemoteFile)
+		self.emit(SIGNAL("imageLoading(bool,int,bool)"), True, ImageSource.RemoteFile, False)
+		
+		# TODO: Testen, ob die Datei evtl. bereits heruntergeladen wurde (Temporärdateicache)
 		
 		# http://docs.python.org/lib/module-urllib2.html
 		import urllib2, tempfile
-		image = None; tempFile = None; tempFileName = None
+		image = None; tempFile = None; tempFileName = None; success = False
 		try:
 			self.emit(SIGNAL("downloadingFile(bool)"), True)
-		
-			# TODO: Nachfragen, bevor ein großes Bild heruntergeladen wird
+
+			# Verbindung herstellen		
 			url = str(url)
 			image = urllib2.urlopen(str(url))
 			
+			# Get image info
+			info = image.info()
+			
+			# Mime-Typ testen
+			if( info.has_key("Content-Type") ):
+				mime = info["Content-Type"]
+				if not self.canHandleMimeType(str(mime)):
+					print "Unsupported MIME type: ", mime
+					
+					self.emit(SIGNAL("imageLoading(bool,int,bool)"), False, ImageSource.RemoteFile, False)
+					return False
+			
+			# TODO: Nachfragen, bevor ein großes Bild heruntergeladen wird
+			if( info.has_key("Content-Length") ):
+				size = info["Content-Length"]
+				print "Remote content size: ", size
+			
+			# Create temp file
 			(tempFile, tempFileName) = tempfile.mkstemp(".fromweb", "iview-")
 			tempFile = open(tempFileName, "wb")
 		
@@ -383,7 +427,7 @@ class ApplicationWindow(QMainWindow):
 		
 		# Bild laden
 		if( tempFileName ):
-			self.internalLoadImageFromFile( tempFileName, ImageSource.RemoteFile )
+			success = self.internalLoadImageFromFile( tempFileName, ImageSource.RemoteFile )
 		
 		return True
 
@@ -491,6 +535,8 @@ class ApplicationWindow(QMainWindow):
 				
 	def deleteTempFiles(self):
 		"""Löscht alle geöffneten temporären Dateien"""
+		if( len(self.tempFiles) == 0): return
+		print "Deleting temporary files"
 		for tmpFile in self.tempFiles:
 			try:
 				os.remove(tmpFile[0])
