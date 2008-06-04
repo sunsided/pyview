@@ -9,7 +9,7 @@ import sys, os, Image
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
-class QDisplay(QLabel):
+class DisplayArea(QLabel):
 	# Member
 	image = None
 	firstImage = True
@@ -97,9 +97,14 @@ class MyForm(QMainWindow):
 		self.setWindowIcon(QIcon("icons/icon.gif"))
 		self.center()
 		self.statusBar()
+		
+		# Drag&Drop initialisieren
+		self.setAcceptDrops(True)
+		self.__class__.dragEnterEvent = self.dragEnterEvent
+		self.__class__.dropEvent = self.dragDropEvent
 			
 		# Das Display-Widget
-		self.displayArea = QDisplay()
+		self.displayArea = DisplayArea()
 		
 		# Scroll Area
 		self.scrollArea = QScrollArea(self)
@@ -112,7 +117,7 @@ class MyForm(QMainWindow):
 		
 		# Weitere Hooks
 		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
-	
+		
 	def buildMenu(self):
 		"""Erstellt die Menüleiste und setzt die Shortcuts"""
 		
@@ -320,7 +325,28 @@ class MyForm(QMainWindow):
 			self.displayArea.adjustSize()
 		else:
 			self.scrollArea.setWidgetResizable(True)
-
+		
+	def dragEnterEvent(self, event):
+		"""Handhabt DragEnter-Events"""
+		#if event.mimeData().hasImage() == True:
+		if event.mimeData().hasUrls() == True:
+			urllist = event.mimeData().urls()
+			for url in urllist:
+				#print "  URL: " + url.toString()
+				fileName = url.toLocalFile()
+				if( fileName != "" ):
+					event.acceptProposedAction()
+		
+	def dragDropEvent(self, event):
+		"""Handhabt Drop-Events"""
+		if event.mimeData().hasUrls() == True:
+			urllist = event.mimeData().urls()
+			for url in urllist:
+				#print "  URL: " + url.toString()
+				fileName = url.toLocalFile()
+				if( fileName != "" ):
+					event.acceptProposedAction()
+					self.openImage(fileName)
 
 
 # Die Anwendung nur starten, wenn die Source nicht als Modul geladen wird
