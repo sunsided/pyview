@@ -302,13 +302,24 @@ class ApplicationWindow(QMainWindow):
 		"""Holt das Home-Verzeichnis des aktuellen Nutzers"""
 		return str(os.environ.get('HOME'))
 
+	def getStartDir(self):
+		"""Liefert das Startverzeichnis der Anwendung, wie es über die Kommandozeile gesetzt wurde"""
+		startDir = self.cmdLineOptions.directory
+		if( os.path.isdir(startDir) ):
+			startDir = os.path.normpath(startDir)
+		else:
+			startDir = os.path.dirname(str(self.cmdLineOptions.directory))
+		return startDir
+
 	def openImageDialog(self):
 		"""Zeigt den \"Bild Laden\"-Dialog an"""
 	
 		# Startverzeichnis holen
-		startDir = self.getUserHomeDir()
-		if( self.lastOpenedFile != None ):
-			startDir = os.path.basename(str(self.lastOpenedFile))
+		startDir = self.getStartDir()
+		if not startDir:
+			startDir = self.getUserHomeDir()
+		if( self.lastOpenedFile != None and not self.isTempFile(self.lastOpenedFile) ):
+			startDir = os.path.dirname(str(self.lastOpenedFile))
 		
 		# Dateifilter definieren
 		filters = QStringList()
@@ -433,6 +444,14 @@ class ApplicationWindow(QMainWindow):
 		
 		return True
 
+	def isTempFile(self, fileName):
+		"""Teste, ob eine Datei eine Temporärdatei ist"""
+		if( len(self.tempFiles) == 0): return False
+		# TODO: Auf Dictionary umstellen
+		for tmpFile in self.tempFiles:
+			if( tmpFile[0] == fileName ): return True
+		return False
+
 	def closeEvent(self, event):
 		"""Wird gerufen, wenn die Anwendung geschlossen werden soll"""
 
@@ -518,6 +537,10 @@ class ApplicationWindow(QMainWindow):
 		cmdOptParser.add_option("--no-tempclean", dest="tempClean", 
 								action="store_false", default=True,
 								help="don't delete cached files when exiting")
+		cmdOptParser.add_option("-d", "--directory", dest="directory", default=None,
+								help="start in DIRECTORY. If an image is loaded through the command line, the directory of the image is used instead", 
+								metavar="DIRECTORY")
+
 		
 		# Parsen
 		(self.cmdLineOptions, self.cmdLineArgs)	= cmdOptParser.parse_args()	
