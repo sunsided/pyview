@@ -6,6 +6,7 @@
 #		http://lists.kde.org/?l=pykde&m=114235100819012&w=2
 
 import sys, os, Image
+from threading import Thread
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from optparse import OptionParser
@@ -91,6 +92,7 @@ class ApplicationWindow(QMainWindow):
 	lastOpenedFile = None
 	isFullScreen = False
 	askBeforeClosing = False
+	loadedFromCommandLine = False
 	
 	# Objekte
 	scrollArea = None
@@ -138,8 +140,7 @@ class ApplicationWindow(QMainWindow):
 		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
 		self.connect(self, SIGNAL("imageLoading(bool, int, bool)"), self.notifyFileLoading)
 		
-		# Kommandozeilenoptionen, Teil 2
-		self.openFileFromCmdLine()
+		print "initializer done"
 		
 	def buildMenu(self):
 		"""Erstellt die Menüleiste und setzt die Shortcuts"""
@@ -522,9 +523,18 @@ class ApplicationWindow(QMainWindow):
 		(self.cmdLineOptions, self.cmdLineArgs)	= cmdOptParser.parse_args()	
 		return self.cmdLineArgs
 		
-	def openFileFromCmdLine(self):
+	def loadInitialImage(self):
+		"""Lädt das Bild von der Kommandozeile"""
+	
+		# Kommandozeilenoptionen, Teil 2
+		if( not self.loadedFromCommandLine ):
+			self.loadedFromCommandLine = True
+			self.internalOpenFileFromCmdLine()
+		
+	def internalOpenFileFromCmdLine(self):
 		"""Holt den Bildpfad von der Kommandozeile"""
 		if( len(self.cmdLineArgs) > 0 ):
+			print "Loading file from command line"
 			param = self.cmdLineArgs[0]
 			url = QUrl(param)
 			if( url.isEmpty() ): return
@@ -543,6 +553,18 @@ class ApplicationWindow(QMainWindow):
 				os.remove(tmpFile[0])
 			except:
 				continue
+				
+	class ImageLoader(Thread):
+		def __init__(self, displayArea):
+			self.displayArea = displayArea
+			Thread.__init__(self)
+		
+		def setSource(self, source):
+			pass
+		
+		def run(self):
+			pass
+
 
 
 # Die Anwendung nur starten, wenn die Source nicht als Modul geladen wird
@@ -556,6 +578,9 @@ if( __name__ == "__main__" ):
 
 	form = ApplicationWindow()
 	form.show()
+	form.update()
+	
+	form.loadInitialImage()
 
 	sys.exit(app.exec_())
 
