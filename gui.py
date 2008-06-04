@@ -359,6 +359,7 @@ class ApplicationWindow(QMainWindow):
 	
 	def canHandleMimeType(self, mimetype):
 		"""Testet, ob eine Datei eines bestimmten Mime-Typs geladen werden kann"""
+		# TODO: Sinnvolle Implementierung auf Basis tatsächlich möglicher Dinge
 		mimetype = str(mimetype).lower()
 		if( mimetype.startswith("image/")): return True
 		if( mimetype.startswith("application/octet-stream") ): return True
