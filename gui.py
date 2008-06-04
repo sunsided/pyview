@@ -78,6 +78,10 @@ class DisplayArea(QLabel):
 
 
 class MyForm(QMainWindow):
+	# Kontanten
+	APPNAME = "Bildbetrachter"
+	APPVERSION = "0.1"
+
 	# Membervariablen
 	lastOpenedFile = None
 	isFullScreen = False
@@ -96,7 +100,7 @@ class MyForm(QMainWindow):
 		self.buildCmdLineParser()
 
 		# Fensterstatus setzen
-		self.setWindowTitle("Testanwendung")
+		self.setWindowTitle(self.APPNAME)
 		self.setWindowIcon(QIcon("icons/icon.gif"))
 		self.resize(640, 480)
 		self.center()
@@ -285,7 +289,7 @@ class MyForm(QMainWindow):
 			# Dateinamen holen und Datei öffnen
 			fileNames = dialog.selectedFiles()
 			fileName = fileNames[0]
-			self.openImage(fileName)
+			self.loadImageFromFile(fileName)
 
 	def reOpenImage(self):
 		"""Öffnet das zuletzt geöffnete Bild erneut"""
@@ -293,9 +297,9 @@ class MyForm(QMainWindow):
 		if( self.lastOpenedFile == None ):
 			print "Could not open last image: No known last image."
 			return
-		self.openImage(self.lastOpenedFile)
+		self.loadImageFromFile(self.lastOpenedFile)
 
-	def openImage(self, fileName):
+	def loadImageFromFile(self, fileName):
 		"""Lädt ein Bild, dessen Pfad bekannt ist"""
 	
 		try:
@@ -355,14 +359,29 @@ class MyForm(QMainWindow):
 				fileName = url.toLocalFile()
 				if( fileName != "" ):
 					event.acceptProposedAction()
-					self.openImage(fileName)
+					self.loadImageFromFile(fileName)
 		
 	def buildCmdLineParser(self):
 		"""Erstellt den Kommandozeilenoptionsparser"""
 		# http://docs.python.org/lib/module-optparse.html
-		cmdOptParser = OptionParser()
-		cmdOptParser.add_option("-f", "--fullscreen", dest="fullScreen", default=False,
+		# http://optik.sourceforge.net/doc/1.5/tutorial.html
+		# http://optik.sourceforge.net/doc/1.5/reference.html
+
+		versionString = self.APPNAME + " v" + self.APPVERSION
+		usageString = "%prog [Optionen] [Dateiname]"
+		descString = "Ein einfacher Bildbetrachter im Stil von IrfanView"
+		
+		# Parser erstellen
+		cmdOptParser = OptionParser(usage = usageString, 
+									version = versionString,
+									description = descString)
+		
+		# Optionen definieren
+		cmdOptParser.add_option("-f", "--fullscreen", dest="fullScreen", 
+								action="store_true", default=False,
 								help="start in fullscreen mode")
+		
+		# Parsen
 		(self.cmdLineOptions, args)	= cmdOptParser.parse_args()
 		return args
 
@@ -376,8 +395,6 @@ if( __name__ == "__main__" ):
 	translator = QTranslator()
 	translator.load("qt_de", "/usr/share/qt4/translations")
 	app.installTranslator(translator)
-
-	print sys.argv[1:]
 
 	form = MyForm()
 	form.show()
