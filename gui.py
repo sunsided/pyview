@@ -9,9 +9,11 @@ import sys, os, Image
 from threading import Thread
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
+from PyQt4.QtOpenGL import *
 from optparse import OptionParser
 
-class DisplayArea(QLabel):
+class DisplayArea(QWidget):
+	"""Arthur-Basierte DisplayArea"""
 	# Member
 	image = None
 	firstImage = True
@@ -33,6 +35,10 @@ class DisplayArea(QLabel):
 	def __del__(self):
 		if( self.image ):
 			self.image.__del__()
+		
+	def isOpenGL(self):
+		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
+		return False
 		
 	def loadFromFile(self, filename):
 		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
@@ -110,6 +116,15 @@ class DisplayArea(QLabel):
 		"""Setzt den Zoom auf 100%"""
 		self.setZoomFactor(1.0)
 
+class GLDisplayArea(QGLWidget, DisplayArea):
+	"""OpenGL-Basierte DisplayArea"""
+	
+	def isOpenGL(self):
+		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
+		return True
+	
+	pass
+
 class ImageSource:
 	Unknown = 0
 	LocalFile = 1
@@ -157,7 +172,12 @@ class ApplicationWindow(QMainWindow):
 		self.__class__.dropEvent = self.dragDropEvent
 			
 		# Das Display-Widget
-		self.displayArea = DisplayArea()
+		if( self.cmdLineOptions.openGL ):
+			print "Using OpenGL rendering engine."
+			self.displayArea = GLDisplayArea() #DisplayArea()
+		else:
+			print "Not using OpenGL rendering engine."
+			self.displayArea = DisplayArea()
 		
 		# Scroll Area
 		self.scrollArea = QScrollArea(self)
@@ -311,8 +331,7 @@ class ApplicationWindow(QMainWindow):
 		print "Selected Menu: " + action.property("tag").toString()
 	
 	def resizeEvent(self, event):
-		#self.displayArea.center()
-		self.displayArea.repaint()	
+		self.displayArea.update()
 	
 	def toggleFullScreen(self):
 		"""Schaltet zwischen Vollbild und Normalansicht um"""
@@ -451,7 +470,7 @@ class ApplicationWindow(QMainWindow):
 		success = False
 		try:
 			success = self.displayArea.loadFromFile(str(fileName))
-			self.displayArea.repaint()
+			#self.displayArea.update()
 			self.lastOpenedFile = fileName
 			self.emit(SIGNAL("imageLoaded(bool)"), True)
 			return True
@@ -632,6 +651,9 @@ class ApplicationWindow(QMainWindow):
 		cmdOptParser.add_option("-d", "--directory", dest="directory", default=None,
 								help="start in DIRECTORY. If an image is loaded through the command line, the directory of the image is used instead", 
 								metavar="DIRECTORY")
+		cmdOptParser.add_option("--no-opengl", dest="openGL", 
+								action="store_false", default=True,
+								help="don't use the OpenGL render engine'")
 
 		
 		# Parsen
