@@ -56,8 +56,7 @@ class DisplayArea(QWidget):
 		if( not PILstring ): return False
 	
 		self.imageSize = QSize( self.PILimage.size[0], self.PILimage.size[1] )
-		self.setMinimumSize( self.imageSize.width()*self.zoomFactor, 
-							self.imageSize.height()*self.zoomFactor );
+		self.setMinimumSize( self.imageSize.width()*self.zoomFactor, self.imageSize.height()*self.zoomFactor );
 		retval = self.image.loadFromData(QByteArray(PILstring))
 		self.repaint()
 		return retval
@@ -66,14 +65,24 @@ class DisplayArea(QWidget):
 		"""Zeichnet das Bild erneut"""
 		if(self.image == None): return
 		painter = QPainter(self)
+		
+		# Nicht über den Rand malen
+		painter.setClipping(True)
+		painter.setClipRect(self.rect())
 
+		# X-Offset
 		offset_x = 0
 		zoomed_width = self.imageSize.width()*self.zoomFactor
+		
+		# Nur beim Verkleinern zentrieren
 		if( self.width() > zoomed_width ):
 			offset_x = (self.width() - zoomed_width) / 2
 
+		# Y-Offset
 		offset_y = 0
 		zoomed_height = self.imageSize.height()*self.zoomFactor
+		
+		# Nur beim Verkleinern zentrieren
 		if( self.height() > zoomed_height ):
 			offset_y = (self.height() - zoomed_height) / 2
 
@@ -97,17 +106,17 @@ class DisplayArea(QWidget):
 		w = self.imageSize.width() * self.zoomFactor
 		h = self.imageSize.height() * self.zoomFactor
 		self.setMinimumSize(w, h)
-		self.resize(self.imageSize)
+		self.resize(w, h)
 		
 		self.repaint()
-		
-		self.adjustScrollBar(QScrollArea(self.parent()).horizontalScrollBar(), factor)
-		self.adjustScrollBar(QScrollArea(self.parent()).verticalScrollBar(), factor)
-	
-	def adjustScrollBar(self, scrollbar, factor):
-		print scrollbar.value(), scrollbar.pageStep()
-	
-		scrollbar.setValue(int(factor*scrollbar.value()) + ((factor-1) * scrollbar.pageStep()/2))
+#		
+#		self.adjustScrollBar(QScrollArea(self.parent()).horizontalScrollBar(), factor)
+#		self.adjustScrollBar(QScrollArea(self.parent()).verticalScrollBar(), factor)
+#	
+#	def adjustScrollBar(self, scrollbar, factor):
+#		print scrollbar.value(), scrollbar.pageStep()
+#	
+#		scrollbar.setValue(int(factor*scrollbar.value()) + ((factor-1) * scrollbar.pageStep()/2))
 	
 	def zoomIn(self):
 		"""Zoomt um einen festen Betrag ein"""
@@ -127,6 +136,8 @@ class DisplayArea(QWidget):
 		"""Setzt den Zoom auf 100%"""
 		self.setZoomFactor(1.0)
 
+
+
 class GLDisplayArea(QGLWidget, DisplayArea):
 	"""OpenGL-Basierte DisplayArea"""
 	
@@ -138,13 +149,16 @@ class GLDisplayArea(QGLWidget, DisplayArea):
 	def isOpenGL(self):
 		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
 		return True
-	
-	pass
+
+
 
 class ImageSource:
-	Unknown = 0
-	LocalFile = 1
-	RemoteFile = 2
+	"""Aufzählungen der Bildquellen"""
+	UNKNOWN = 0
+	LOCALFILE = 1
+	REMOTEFILE = 2
+
+
 
 class ApplicationWindow(QMainWindow):
 	# Kontanten
@@ -214,6 +228,11 @@ class ApplicationWindow(QMainWindow):
 		# Weitere Hooks
 		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
 		self.connect(self, SIGNAL("imageLoading(bool, int, bool)"), self.notifyFileLoading)
+		self.connect(self.scrollArea.verticalScrollBar(), SIGNAL("valueChanged(int)"), self.imageAreaScrolled)
+		self.connect(self.scrollArea.verticalScrollBar(), SIGNAL("valueChanged(int)"), self.imageAreaScrolled)
+		
+	def imageAreaScrolled(self, value):
+		self.displayArea.repaint()
 		
 	def buildMenu(self):
 		"""Erstellt die Menüleiste und setzt die Shortcuts"""
@@ -482,8 +501,8 @@ class ApplicationWindow(QMainWindow):
 
 	def loadImageFromFile(self, fileName):
 		"""Lädt ein Bild, dessen Pfad bekannt ist"""
-		self.emit(SIGNAL("imageLoading(bool,int,bool)"), True, ImageSource.LocalFile, False)
-		return self.internalLoadImageFromFile(fileName, ImageSource.LocalFile)
+		self.emit(SIGNAL("imageLoading(bool,int,bool)"), True, ImageSource.LOCALFILE, False)
+		return self.internalLoadImageFromFile(fileName, ImageSource.LOCALFILE)
 			
 	def internalLoadImageFromFile(self, fileName, source):
 		"""Lädt ein Bild, dessen Pfad bekannt ist"""
@@ -511,7 +530,7 @@ class ApplicationWindow(QMainWindow):
 	
 	def loadImageFromWeb(self, url):
 		"""Lädt ein Bild aus dem Netz"""
-		self.emit(SIGNAL("imageLoading(bool,int,bool)"), True, ImageSource.RemoteFile, False)
+		self.emit(SIGNAL("imageLoading(bool,int,bool)"), True, ImageSource.REMOTEFILE, False)
 		
 		# TODO: Testen, ob die Datei evtl. bereits heruntergeladen wurde (Temporärdateicache)
 		
@@ -534,7 +553,7 @@ class ApplicationWindow(QMainWindow):
 				if not self.canHandleMimeType(str(mime)):
 					print "Unsupported MIME type: ", mime
 					
-					self.emit(SIGNAL("imageLoading(bool,int,bool)"), False, ImageSource.RemoteFile, False)
+					self.emit(SIGNAL("imageLoading(bool,int,bool)"), False, ImageSource.REMOTEFILE, False)
 					return False
 			
 			# TODO: Nachfragen, bevor ein großes Bild heruntergeladen wird
