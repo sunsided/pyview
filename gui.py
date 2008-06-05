@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Kudos:
@@ -29,6 +29,9 @@ class DisplayArea(QWidget):
 		"""Initialisiert die Klasse"""
 		QWidget.__init__(self, parent)
 		
+		self.setBackgroundRole(QPalette.Base)
+		self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+				
 		# Variablen setzen
 		self.image = QImage()
 		
@@ -52,13 +55,12 @@ class DisplayArea(QWidget):
 		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
 		if( not PILstring ): return False
 	
-		#if( self.firstImage == True ):
-		#	self.firstImage = False
 		self.imageSize = QSize( self.PILimage.size[0], self.PILimage.size[1] )
-		#self.resize(self.imageSize)
-		self.setMinimumSize( self.imageSize.width(), self.imageSize.height() ); # Zoom-Faktoren beachten
-		
-		return self.image.loadFromData(QByteArray(PILstring))
+		self.setMinimumSize( self.imageSize.width()*self.zoomFactor, 
+							self.imageSize.height()*self.zoomFactor );
+		retval = self.image.loadFromData(QByteArray(PILstring))
+		self.repaint()
+		return retval
 		
 	def paintEvent(self, event):
 		"""Zeichnet das Bild erneut"""
@@ -79,9 +81,10 @@ class DisplayArea(QWidget):
 		painter.translate(offset_x, offset_y)
 		painter.scale(self.zoomFactor, self.zoomFactor)
 		
-		exposedRect = painter.matrix().inverted()[0].mapRect(event.rect()).adjusted(-1, -1, 1, 1)
-		painter.drawImage(exposedRect, self.image, exposedRect)
-		#painter.drawImage(0, 0, self.image)
+		#exposedRect = painter.matrix().inverted()[0].mapRect(event.rect()).adjusted(-1, -1, 1, 1)
+		painter.drawImage(0,0,self.image)
+		#painter.drawImage(exposedRect, self.image, exposedRect)
+		#painter.drawImage(self.parent().rect(), self.image, exposedRect)
 		painter.restore()
 	
 	def setZoomFactor(self, factor):
@@ -89,14 +92,22 @@ class DisplayArea(QWidget):
 		if( self.zoomFactor == factor ): return
 		
 		self.zoomFactor = factor
-		self.emit(SIGNAL("zoomFactorChanged(float)"), self.zoomFactor)
+		self.emit(SIGNAL("zoomFactorChanged(float)"), factor)
 		
 		w = self.imageSize.width() * self.zoomFactor
 		h = self.imageSize.height() * self.zoomFactor
 		self.setMinimumSize(w, h)
-		self.resize(self.parent().width(), self.parent().height())
+		self.resize(self.imageSize)
 		
 		self.repaint()
+		
+		self.adjustScrollBar(QScrollArea(self.parent()).horizontalScrollBar(), factor)
+		self.adjustScrollBar(QScrollArea(self.parent()).verticalScrollBar(), factor)
+	
+	def adjustScrollBar(self, scrollbar, factor):
+		print scrollbar.value(), scrollbar.pageStep()
+	
+		scrollbar.setValue(int(factor*scrollbar.value()) + ((factor-1) * scrollbar.pageStep()/2))
 	
 	def zoomIn(self):
 		"""Zoomt um einen festen Betrag ein"""
@@ -118,6 +129,11 @@ class DisplayArea(QWidget):
 
 class GLDisplayArea(QGLWidget, DisplayArea):
 	"""OpenGL-Basierte DisplayArea"""
+	
+	def __init__(self, parent=None):
+		"""Initialisiert die Klasse"""
+		QGLWidget.__init__(self, parent)
+		DisplayArea.__init__(self, parent)
 	
 	def isOpenGL(self):
 		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
@@ -187,7 +203,8 @@ class ApplicationWindow(QMainWindow):
 		self.scrollArea = QScrollArea(self)
 		# TODO: Benutzerdefinierte Farbe
 		self.scrollArea.setBackgroundRole(QPalette.Dark)
-		self.scrollArea.setWidgetResizable(True)
+		#self.scrollArea.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
+		#self.scrollArea.setWidgetResizable(True)
 		self.scrollArea.setWidget(self.displayArea)
 		self.setCentralWidget(self.scrollArea)
 
