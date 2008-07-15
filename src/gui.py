@@ -4,12 +4,18 @@
 # Kudos:
 #		http://www.webappers.com/2008/02/12/webappers-released-free-web-application-icons-set/
 #		http://lists.kde.org/?l=pykde&m=114235100819012&w=2
+#
+# Disable pylint spaces/tabs warning
+# pylint: disable-msg=W0312
+# pylint: disable-msg=W0511
 
 import sys, os, Image
 from threading import Thread
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
-from PyQt4.QtOpenGL import *
+from PyQt4.QtGui import QApplication, QMessageBox, QMainWindow, QWidget, QPainter, QPalette, \
+						QSizePolicy, QImage, QIcon, QScrollArea, QActionGroup, QAction, QFileDialog, \
+						QMessageBox, QDesktopWidget
+from PyQt4.QtCore import SIGNAL, SLOT, QTranslator, QVariant, QUrl, QStringList, QSize, QByteArray
+from PyQt4.QtOpenGL import QGLFormat, QGLWidget
 from optparse import OptionParser
 
 class DisplayArea(QWidget):
@@ -24,43 +30,45 @@ class DisplayArea(QWidget):
 	MAX_ZOOM = 10.0
 	MIN_ZOOM = 0.1
 	ZOOM_STEP = 0.1
-
+	
 	def __init__(self, parent=None):
 		"""Initialisiert die Klasse"""
 		QWidget.__init__(self, parent)
 		
 		self.setBackgroundRole(QPalette.Base)
 		self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-				
-		# Variablen setzen
-		self.image = QImage()
 		
+		# Variablen setzen
+		self.PILimage = None
+		self.image = QImage()
+
 	def __del__(self):
+		self.PILimage = None
 		if( self.image ):
 			self.image.__del__()
-		
+
 	def isOpenGL(self):
 		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
 		return False
-		
+
 	def loadFromFile(self, filename):
 		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
 		# load an image using PIL, first read it
 		self.PILimage  = Image.open(filename)
 		return self.__PIL2Qt()
-		
+
 	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
 		"""Wandelt ein Bild der PIL in ein QImage um"""	
 		# http://mail.python.org/pipermail/image-sig/2004-September/002908.html
 		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
 		if( not PILstring ): return False
-	
+		
 		self.imageSize = QSize( self.PILimage.size[0], self.PILimage.size[1] )
-		self.setMinimumSize( self.imageSize.width()*self.zoomFactor, self.imageSize.height()*self.zoomFactor );
+		self.setMinimumSize( self.imageSize.width()*self.zoomFactor, self.imageSize.height()*self.zoomFactor )
 		retval = self.image.loadFromData(QByteArray(PILstring))
 		self.repaint()
 		return retval
-		
+
 	def paintEvent(self, event):
 		"""Zeichnet das Bild erneut"""
 		if(self.image == None): return
@@ -69,7 +77,7 @@ class DisplayArea(QWidget):
 		# Nicht über den Rand malen
 		painter.setClipping(True)
 		painter.setClipRect(self.rect())
-
+		
 		# X-Offset
 		offset_x = 0
 		zoomed_width = self.imageSize.width()*self.zoomFactor
@@ -77,7 +85,7 @@ class DisplayArea(QWidget):
 		# Nur beim Verkleinern zentrieren
 		if( self.width() > zoomed_width ):
 			offset_x = (self.width() - zoomed_width) / 2
-
+		
 		# Y-Offset
 		offset_y = 0
 		zoomed_height = self.imageSize.height()*self.zoomFactor
@@ -85,7 +93,7 @@ class DisplayArea(QWidget):
 		# Nur beim Verkleinern zentrieren
 		if( self.height() > zoomed_height ):
 			offset_y = (self.height() - zoomed_height) / 2
-
+		
 		painter.save()
 		painter.translate(offset_x, offset_y)
 		painter.scale(self.zoomFactor, self.zoomFactor)
@@ -95,7 +103,7 @@ class DisplayArea(QWidget):
 		#painter.drawImage(exposedRect, self.image, exposedRect)
 		#painter.drawImage(self.parent().rect(), self.image, exposedRect)
 		painter.restore()
-	
+
 	def setZoomFactor(self, factor):
 		"""Setzt den Zoom-Faktor des Bildes"""
 		if( self.zoomFactor == factor ): return
@@ -112,7 +120,7 @@ class DisplayArea(QWidget):
 #		
 #		self.adjustScrollBar(QScrollArea(self.parent()).horizontalScrollBar(), factor)
 #		self.adjustScrollBar(QScrollArea(self.parent()).verticalScrollBar(), factor)
-#	
+#
 #	def adjustScrollBar(self, scrollbar, factor):
 #		print scrollbar.value(), scrollbar.pageStep()
 #	
@@ -124,14 +132,14 @@ class DisplayArea(QWidget):
 		if( newZoomFactor >= self.MAX_ZOOM ):
 			newZoomFactor = self.MAX_ZOOM
 		self.setZoomFactor(newZoomFactor)
-		
+
 	def zoomOut(self):
 		"""Zoomt um einen festen Betrag aus"""
 		newZoomFactor = self.zoomFactor - self.ZOOM_STEP
 		if( newZoomFactor <= self.MIN_ZOOM ):
 			newZoomFactor = self.MIN_ZOOM
 		self.setZoomFactor(newZoomFactor)
-		
+
 	def zoomFull(self):
 		"""Setzt den Zoom auf 100%"""
 		self.setZoomFactor(1.0)
@@ -154,6 +162,8 @@ class GLDisplayArea(QGLWidget, DisplayArea):
 
 class ImageSource:
 	"""Aufzählungen der Bildquellen"""
+	def __init__(self):
+		pass
 	UNKNOWN = 0
 	LOCALFILE = 1
 	REMOTEFILE = 2
@@ -181,10 +191,10 @@ class ApplicationWindow(QMainWindow):
 	def __init__(self, parent=None):
 		"""Initialisiert das Anwendungsfenster"""
 		QMainWindow.__init__(self, parent)
-
+		
 		# Kommandozeilenoptionen, Teil 1
 		self.buildCmdLineParser()
-
+		
 		# Fensterstatus setzen
 		self.setWindowTitle(self.APPNAME)
 		self.setWindowIcon(QIcon("icons/icon.gif"))
@@ -198,7 +208,7 @@ class ApplicationWindow(QMainWindow):
 		
 		# Drag&Drop initialisieren
 		self.setAcceptDrops(True)
-		self.__class__.dragEnterEvent = self.dragEnterEvent
+		#self.__class__.dragEnterEvent = self.dragEnterEvent
 		self.__class__.dropEvent = self.dragDropEvent
 			
 		# Das Display-Widget
@@ -591,7 +601,7 @@ class ApplicationWindow(QMainWindow):
 		
 		# Bild laden
 		if( tempFileName ):
-			success = self.internalLoadImageFromFile( tempFileName, ImageSource.RemoteFile )
+			success = self.internalLoadImageFromFile( tempFileName, ImageSource.REMOTEFILE )
 		
 		return True
 
