@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Kudos:
@@ -751,23 +750,4 @@ class ApplicationWindow(QMainWindow):
 		
 		def run(self):
 			pass
-
-
-
-# Die Anwendung nur starten, wenn die Source nicht als Modul geladen wird
-if( __name__ == "__main__" ):
-	app = QApplication(sys.argv)
-
-	# Siehe: http://www.riverbankcomputing.co.uk/static/Docs/PyQt4/html/qtranslator.html
-	translator = QTranslator()
-	translator.load("qt_de", "/usr/share/qt4/translations")
-	app.installTranslator(translator)
-
-	form = ApplicationWindow()
-	form.show()
-	form.update()
-	
-	form.loadInitialImage()
-
-	sys.exit(app.exec_())
 
