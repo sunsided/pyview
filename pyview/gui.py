@@ -10,10 +10,10 @@
 
 import sys, os, Image
 from threading import Thread
-from PyQt4.QtGui import QApplication, QMessageBox, QMainWindow, QWidget, QPainter, QPalette, \
+from PyQt4.QtGui import QMessageBox, QMainWindow, QWidget, QPainter, QPalette, \
 						QSizePolicy, QImage, QIcon, QScrollArea, QActionGroup, QAction, QFileDialog, \
 						QMessageBox, QDesktopWidget
-from PyQt4.QtCore import SIGNAL, SLOT, QTranslator, QVariant, QUrl, QStringList, QSize, QByteArray
+from PyQt4.QtCore import SIGNAL, SLOT, QVariant, QUrl, QStringList, QSize, QByteArray
 from PyQt4.QtOpenGL import QGLFormat, QGLWidget
 from optparse import OptionParser
 
@@ -545,7 +545,9 @@ class ApplicationWindow(QMainWindow):
 		
 		# http://docs.python.org/lib/module-urllib2.html
 		import urllib2, tempfile
-		image = None; tempFile = None; tempFileName = None; success = False
+		image = None
+		tempFile = None 
+		tempFileName = None
 		try:
 			self.emit(SIGNAL("downloadingFile(bool)"), True)
 
@@ -600,7 +602,7 @@ class ApplicationWindow(QMainWindow):
 		
 		# Bild laden
 		if( tempFileName ):
-			success = self.internalLoadImageFromFile( tempFileName, ImageSource.REMOTEFILE )
+			self.internalLoadImageFromFile( tempFileName, ImageSource.REMOTEFILE )
 		
 		return True
 
