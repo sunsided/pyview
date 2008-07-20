@@ -12,7 +12,7 @@ import sys, os
 from threading import Thread
 from PyQt4.QtGui import QMessageBox, QMainWindow, QPalette, \
 						QIcon, QScrollArea, QActionGroup, QAction, QFileDialog, \
-						QMessageBox, QDesktopWidget
+						QMessageBox, QDesktopWidget, QIconSet, QPixmap
 from PyQt4.QtCore import SIGNAL, SLOT, QVariant, QUrl, QStringList, QObject
 from PyQt4.QtOpenGL import QGLFormat
 from optparse import OptionParser
@@ -42,6 +42,9 @@ class ApplicationWindow(QMainWindow):
 	cmdLineOptions = None
 	cmdLineArgs = []
 	tempFiles = []
+	
+	# Menu options
+	actions = {}
 	
 	def __init__(self, parent=None):
 		"""Initialisiert das Anwendungsfenster"""
@@ -112,10 +115,15 @@ class ApplicationWindow(QMainWindow):
 		menuBar = self.menuBar()
 		
 		# Menüeintrag zum Laden eines Bildes
-		menuFileOpen = QAction(QIcon("icons/Load.png"), self.tr("&Open ..."), self)
-		menuFileOpen.setShortcut(self.tr("O", "File|Open"))
-		menuFileOpen.setStatusTip(self.tr("Opens a picture"))
-		self.connect(menuFileOpen, SIGNAL("triggered()"), self.openImageDialog)
+		# "icons/Load.png"
+		self.actions["fileOpen"] = QAction( 
+										self.tr("Open"), 
+										QIconSet(QPixmap(filenew)), 
+										self.tr("&Open ..."),
+										self)
+		self.actions["fileOpen"].setShortcut(self.tr("O", "File|Open"))
+		#menuFileOpen.setStatusTip(self.tr("Opens a picture"))
+		self.connect(self.actions["fileOpen"], SIGNAL("triggered()"), self.openImageDialog)
 		
 		# Menüeintrag zum Laden eines Bildes
 		menuFileReopen = QAction(QIcon("icons/Load.png"), self.tr("&Reload picture"), self)
@@ -133,8 +141,8 @@ class ApplicationWindow(QMainWindow):
 		
 		# Dateimenü
 		file = menuBar.addMenu(self.tr("&File"))	
-		self.addAction(menuFileOpen)
-		file.addAction(menuFileOpen)
+		self.addAction(self.actions["fileOpen"])
+		file.addAction(self.actions["fileOpen"])
 		self.addAction(menuFileReopen)
 		file.addAction(menuFileReopen)
 		file.addSeparator()
