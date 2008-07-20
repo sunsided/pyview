@@ -8,7 +8,7 @@
 import sys
 from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import QTranslator
-from gui import ApplicationWindow
+from mainwin import ApplicationWindow
 
 def main():
 	"""pyview main entry point"""
