@@ -8,170 +8,26 @@
 # pylint: disable-msg=W0312
 # pylint: disable-msg=W0511
 
-import sys, os, Image
+import sys, os
 from threading import Thread
-from PyQt4.QtGui import QMessageBox, QMainWindow, QWidget, QPainter, QPalette, \
-						QSizePolicy, QImage, QIcon, QScrollArea, QActionGroup, QAction, QFileDialog, \
+from PyQt4.QtGui import QMessageBox, QMainWindow, QPalette, \
+						QIcon, QScrollArea, QActionGroup, QAction, QFileDialog, \
 						QMessageBox, QDesktopWidget
-from PyQt4.QtCore import SIGNAL, SLOT, QVariant, QUrl, QStringList, QSize, QByteArray
-from PyQt4.QtOpenGL import QGLFormat, QGLWidget
+from PyQt4.QtCore import SIGNAL, SLOT, QVariant, QUrl, QStringList
+from PyQt4.QtOpenGL import QGLFormat
 from optparse import OptionParser
-
-class DisplayArea(QWidget):
-	"""Arthur-Basierte DisplayArea"""
-	# Member
-	image = None
-	firstImage = True
-	imageSize = QSize(0, 0)
-	zoomFactor = 1.0
-	
-	# Konstanten
-	MAX_ZOOM = 10.0
-	MIN_ZOOM = 0.1
-	ZOOM_STEP = 0.1
-	
-	def __init__(self, parent=None):
-		"""Initialisiert die Klasse"""
-		QWidget.__init__(self, parent)
-		
-		self.setBackgroundRole(QPalette.Base)
-		self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-		
-		# Variablen setzen
-		self.PILimage = None
-		self.image = QImage()
-
-	def __del__(self):
-		self.PILimage = None
-		if( self.image ):
-			self.image.__del__()
-
-	def isOpenGL(self):
-		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
-		return False
-
-	def loadFromFile(self, filename):
-		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
-		# load an image using PIL, first read it
-		self.PILimage  = Image.open(filename)
-		return self.__PIL2Qt()
-
-	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
-		"""Wandelt ein Bild der PIL in ein QImage um"""	
-		# http://mail.python.org/pipermail/image-sig/2004-September/002908.html
-		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
-		if( not PILstring ): return False
-		
-		self.imageSize = QSize( self.PILimage.size[0], self.PILimage.size[1] )
-		self.setMinimumSize( self.imageSize.width()*self.zoomFactor, self.imageSize.height()*self.zoomFactor )
-		retval = self.image.loadFromData(QByteArray(PILstring))
-		self.repaint()
-		return retval
-
-	def paintEvent(self, event):
-		"""Zeichnet das Bild erneut"""
-		if(self.image == None): return
-		painter = QPainter(self)
-		
-		# Nicht über den Rand malen
-		painter.setClipping(True)
-		painter.setClipRect(self.rect())
-		
-		# X-Offset
-		offset_x = 0
-		zoomed_width = self.imageSize.width()*self.zoomFactor
-		
-		# Nur beim Verkleinern zentrieren
-		if( self.width() > zoomed_width ):
-			offset_x = (self.width() - zoomed_width) / 2
-		
-		# Y-Offset
-		offset_y = 0
-		zoomed_height = self.imageSize.height()*self.zoomFactor
-		
-		# Nur beim Verkleinern zentrieren
-		if( self.height() > zoomed_height ):
-			offset_y = (self.height() - zoomed_height) / 2
-		
-		painter.save()
-		painter.translate(offset_x, offset_y)
-		painter.scale(self.zoomFactor, self.zoomFactor)
-		
-		#exposedRect = painter.matrix().inverted()[0].mapRect(event.rect()).adjusted(-1, -1, 1, 1)
-		painter.drawImage(0,0,self.image)
-		#painter.drawImage(exposedRect, self.image, exposedRect)
-		#painter.drawImage(self.parent().rect(), self.image, exposedRect)
-		painter.restore()
-
-	def setZoomFactor(self, factor):
-		"""Setzt den Zoom-Faktor des Bildes"""
-		if( self.zoomFactor == factor ): return
-		
-		self.zoomFactor = factor
-		self.emit(SIGNAL("zoomFactorChanged(float)"), factor)
-		
-		w = self.imageSize.width() * self.zoomFactor
-		h = self.imageSize.height() * self.zoomFactor
-		self.setMinimumSize(w, h)
-		self.resize(w, h)
-		
-		self.repaint()
-#		
-#		self.adjustScrollBar(QScrollArea(self.parent()).horizontalScrollBar(), factor)
-#		self.adjustScrollBar(QScrollArea(self.parent()).verticalScrollBar(), factor)
-#
-#	def adjustScrollBar(self, scrollbar, factor):
-#		print scrollbar.value(), scrollbar.pageStep()
-#	
-#		scrollbar.setValue(int(factor*scrollbar.value()) + ((factor-1) * scrollbar.pageStep()/2))
-	
-	def zoomIn(self):
-		"""Zoomt um einen festen Betrag ein"""
-		newZoomFactor = self.zoomFactor + self.ZOOM_STEP
-		if( newZoomFactor >= self.MAX_ZOOM ):
-			newZoomFactor = self.MAX_ZOOM
-		self.setZoomFactor(newZoomFactor)
-
-	def zoomOut(self):
-		"""Zoomt um einen festen Betrag aus"""
-		newZoomFactor = self.zoomFactor - self.ZOOM_STEP
-		if( newZoomFactor <= self.MIN_ZOOM ):
-			newZoomFactor = self.MIN_ZOOM
-		self.setZoomFactor(newZoomFactor)
-
-	def zoomFull(self):
-		"""Setzt den Zoom auf 100%"""
-		self.setZoomFactor(1.0)
-
-
-
-class GLDisplayArea(QGLWidget, DisplayArea):
-	"""OpenGL-Basierte DisplayArea"""
-	
-	def __init__(self, parent=None):
-		"""Initialisiert die Klasse"""
-		QGLWidget.__init__(self, parent)
-		DisplayArea.__init__(self, parent)
-	
-	def isOpenGL(self):
-		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
-		return True
-
-
-
-class ImageSource:
-	"""Aufzählungen der Bildquellen"""
-	def __init__(self):
-		pass
-	UNKNOWN = 0
-	LOCALFILE = 1
-	REMOTEFILE = 2
-
+from DisplayArea import DisplayArea
+from GLDisplayArea import GLDisplayArea
+from ImageSource import ImageSource
 
 
 class ApplicationWindow(QMainWindow):
+	"""ApplicationWindow
+	
+	This is pyview's main window."""
+	
 	# Kontanten
-	APPNAME = "Bildbetrachter"
+	APPNAME = "pyview"
 	APPVERSION = "0.1"
 
 	# Membervariablen
@@ -244,7 +100,7 @@ class ApplicationWindow(QMainWindow):
 		self.displayArea.repaint()
 		
 	def buildMenu(self):
-		"""Erstellt die Menüleiste und setzt die Shortcuts"""
+		"""Creates the menus and applies the shortcuts"""
 		
 		# Menüzeile
 		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
@@ -383,7 +239,7 @@ class ApplicationWindow(QMainWindow):
 		self.displayArea.update()
 	
 	def toggleFullScreen(self):
-		"""Schaltet zwischen Vollbild und Normalansicht um"""
+		"""Switches between fullscreen and normal view"""
 	
 		self.isFullScreen = not self.isFullScreen
 		if(self.isFullScreen):
@@ -396,7 +252,7 @@ class ApplicationWindow(QMainWindow):
 			self.statusBar().show()
 	
 	def notifyFileLoading(self, loading, source, success):
-		"""Wird gerufen, wenn eine Datei geladen wird"""
+		"""Called when a files is about to load"""
 		if( source == 0 or source == 1 ):
 			if( loading ):
 				print "Loading file ..."
@@ -421,7 +277,7 @@ class ApplicationWindow(QMainWindow):
 					self.setStatusTip("Laden von entfernter Datei abgebrochen.")
 	
 	def notifyFileLoaded(self, state):
-		"""Wird gerufen, wenn eine Datei geladen wurde"""	
+		"""Called when a file is loaded"""	
 		print "File loaded."
 		if not state: return
 		filename = os.path.basename(str(self.lastOpenedFile))
@@ -429,13 +285,12 @@ class ApplicationWindow(QMainWindow):
 		self.setStatusTip("Datei geladen.")
 		
 	def getUserHomeDir(self):
-		"""Holt das Home-Verzeichnis des aktuellen Nutzers"""
+		"""Gets the user's home directory"""
 		# TODO: Windows-sicher machen
 		return str(os.environ.get('HOME'))
 
 	def getStartDir(self):
-		"""Liefert das Startverzeichnis der Anwendung, wie es über die 
-		Kommandozeile gesetzt wurde"""
+		"""Gets the directory from which pyview was started"""
 		startDir = str(self.cmdLineOptions.directory)
 		if( os.path.isdir(startDir) ):
 			startDir = os.path.normpath(startDir)
@@ -444,7 +299,7 @@ class ApplicationWindow(QMainWindow):
 		return str(startDir)
 
 	def getUserPicturesDir(self):
-		"""Holt den Pfad des Benutzer-Bilderverzeichnisses"""
+		"""Gets the user's Pictures folder"""
 		# http://win32com.goermezer.de/content/view/191/188/
 		# http://www.blueskyonmars.com/2005/08/05/finding-a-users-my-documents-folder-on-windows/
 		# TODO: Erweitern auf Windows, MacOS, ...
@@ -469,7 +324,7 @@ class ApplicationWindow(QMainWindow):
 		return None
 
 	def openImageDialog(self):
-		"""Zeigt den \"Bild Laden\"-Dialog an"""
+		"""Displays the \"Open Picture\" dialog"""
 	
 		# Startverzeichnis holen
 		startDir = self.getStartDir()
@@ -501,7 +356,7 @@ class ApplicationWindow(QMainWindow):
 			self.loadImageFromFile(fileName)
 
 	def reOpenImage(self):
-		"""Öffnet das zuletzt geöffnete Bild erneut"""
+		"""Reopens the last file"""
 	
 		if( self.lastOpenedFile == None ):
 			print "Could not open last image: No known last image."
@@ -509,12 +364,13 @@ class ApplicationWindow(QMainWindow):
 		self.loadImageFromFile(self.lastOpenedFile)
 
 	def loadImageFromFile(self, fileName):
-		"""Lädt ein Bild, dessen Pfad bekannt ist"""
+		"""Loads a file with a known path"""
 		self.emit(SIGNAL("imageLoading(bool,int,bool)"), True, ImageSource.LOCALFILE, False)
 		return self.internalLoadImageFromFile(fileName, ImageSource.LOCALFILE)
 			
 	def internalLoadImageFromFile(self, fileName, source):
-		"""Lädt ein Bild, dessen Pfad bekannt ist"""
+		"""Loads a file with a known path.
+		This is an internal function."""
 
 		success = False
 		try:
@@ -530,7 +386,8 @@ class ApplicationWindow(QMainWindow):
 			self.emit(SIGNAL("imageLoading(bool,int,bool)"), False, int(source), success)
 	
 	def canHandleMimeType(self, mimetype):
-		"""Testet, ob eine Datei eines bestimmten Mime-Typs geladen werden kann"""
+		"""Tests the mimetype of the file.
+		Returns True if the mime type can be handled and false otherwise"""
 		# TODO: Sinnvolle Implementierung auf Basis tatsächlich möglicher Dinge
 		mimetype = str(mimetype).lower()
 		if( mimetype.startswith("image/")): return True
@@ -538,7 +395,7 @@ class ApplicationWindow(QMainWindow):
 		return False
 	
 	def loadImageFromWeb(self, url):
-		"""Lädt ein Bild aus dem Netz"""
+		"""Loads a picture from the web"""
 		self.emit(SIGNAL("imageLoading(bool,int,bool)"), True, ImageSource.REMOTEFILE, False)
 		
 		# TODO: Testen, ob die Datei evtl. bereits heruntergeladen wurde (Temporärdateicache)
@@ -607,7 +464,7 @@ class ApplicationWindow(QMainWindow):
 		return True
 
 	def isTempFile(self, fileName):
-		"""Teste, ob eine Datei eine Temporärdatei ist"""
+		"""Tests if a file is a temporary file"""
 		if( len(self.tempFiles) == 0): return False
 		# TODO: Auf Dictionary umstellen
 		for tmpFile in self.tempFiles:
@@ -615,7 +472,7 @@ class ApplicationWindow(QMainWindow):
 		return False
 
 	def closeEvent(self, event):
-		"""Wird gerufen, wenn die Anwendung geschlossen werden soll"""
+		"""Called when the application is about to close"""
 
 		if( self.askBeforeClosing ):
 			reply = QMessageBox.question(self, "Programm beenden", "Sind Sie sicher?", QMessageBox.Yes, QMessageBox.No)
@@ -630,14 +487,14 @@ class ApplicationWindow(QMainWindow):
 		if( self.cmdLineOptions.tempClean ): self.deleteTempFiles()
 
 	def center(self):
-		"""Zentriert die Anwendung auf dem Bildschirm"""
+		"""Centers the window on the screen"""
 	
 		screen = QDesktopWidget().screenGeometry()
 		size =  self.geometry()
 		self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
 		
 	def setFitToWindow(self, state):
-		"""Schaltet die verschiedenen Ansichtsmodi des Bildes durch"""
+		"""Switches the display modes"""
 	
 		print "setFitToWindow called: " + str(state)
 		if( state == False):
@@ -648,7 +505,7 @@ class ApplicationWindow(QMainWindow):
 			self.scrollArea.setWidgetResizable(True)
 	
 	def dragEnterEvent(self, event):
-		"""Handhabt DragEnter-Events"""
+		"""Drag&Drop event: Element enters the window"""
 		#if event.mimeData().hasImage() == True:
 		if event.mimeData().hasUrls() == True:
 			urllist = event.mimeData().urls()
@@ -662,7 +519,7 @@ class ApplicationWindow(QMainWindow):
 					event.acceptProposedAction()
 	
 	def dragDropEvent(self, event):
-		"""Handhabt Drop-Events"""
+		"""Drag&Drop event: Item has been dropped"""
 		if event.mimeData().hasUrls() == True:
 			urllist = event.mimeData().urls()
 			for url in urllist:
@@ -678,7 +535,7 @@ class ApplicationWindow(QMainWindow):
 					self.loadImageFromWeb(url.toString())
 		
 	def buildCmdLineParser(self):
-		"""Erstellt den Kommandozeilenoptionsparser"""
+		"""Creates the command line options parser"""
 		# http://docs.python.org/lib/module-optparse.html
 		# http://optik.sourceforge.net/doc/1.5/tutorial.html
 		# http://optik.sourceforge.net/doc/1.5/reference.html
@@ -712,7 +569,7 @@ class ApplicationWindow(QMainWindow):
 		return self.cmdLineArgs
 		
 	def loadInitialImage(self):
-		"""Lädt das Bild von der Kommandozeile"""
+		"""Loads the picture specified on the command line"""
 	
 		# Kommandozeilenoptionen, Teil 2
 		if( not self.loadedFromCommandLine ):
@@ -720,7 +577,7 @@ class ApplicationWindow(QMainWindow):
 			self.internalOpenFileFromCmdLine()
 		
 	def internalOpenFileFromCmdLine(self):
-		"""Holt den Bildpfad von der Kommandozeile"""
+		"""Gets the path of the picture specified on the command line"""
 		if( len(self.cmdLineArgs) > 0 ):
 			print "Loading file from command line"
 			param = self.cmdLineArgs[0]
@@ -733,7 +590,7 @@ class ApplicationWindow(QMainWindow):
 				self.loadImageFromWeb( url.toString() )
 				
 	def deleteTempFiles(self):
-		"""Löscht alle geöffneten temporären Dateien"""
+		"""Deletes all registered temporary files"""
 		if( len(self.tempFiles) == 0): return
 		print "Deleting temporary files"
 		for tmpFile in self.tempFiles:
@@ -742,14 +599,3 @@ class ApplicationWindow(QMainWindow):
 			except:
 				continue
 				
-	class ImageLoader(Thread):
-		def __init__(self, displayArea):
-			self.displayArea = displayArea
-			Thread.__init__(self)
-		
-		def setSource(self, source):
-			pass
-		
-		def run(self):
-			pass
-
