@@ -8,13 +8,13 @@ from PyQt4.QtOpenGL import QGLWidget
 from DisplayArea import DisplayArea
 
 class GLDisplayArea(QGLWidget, DisplayArea):
-	"""OpenGL-Basierte DisplayArea"""
+	"""OpenGL based DisplayArea"""
 	
 	def __init__(self, parent=None):
-		"""Initialisiert die Klasse"""
+		"""Initializes the class"""
 		QGLWidget.__init__(self, parent)
 		DisplayArea.__init__(self, parent)
 	
 	def isOpenGL(self):
-		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
+		"""Determines if this class is OpenGL based. Returns true."""
 		return True

@@ -38,17 +38,17 @@ class DisplayArea(QWidget):
 			self.image.__del__()
 
 	def isOpenGL(self):
-		"""Gibt an, ob diese DisplayArea OpenGL nutzt"""
+		"""Determines if this class is OpenGL based. Returns False."""
 		return False
 
 	def loadFromFile(self, filename):
-		"""Öffnet ein Bild, dessen Dateiname bekannt ist"""
+		"""Opens a picture with a known name"""
 		# load an image using PIL, first read it
 		self.PILimage  = Image.open(filename)
 		return self.__PIL2Qt()
 
 	def __PIL2Qt(self, encoder="jpeg", mode="RGB"):
-		"""Wandelt ein Bild der PIL in ein QImage um"""	
+		"""Converts a PIL image to a QImage"""	
 		# http://mail.python.org/pipermail/image-sig/2004-September/002908.html
 		PILstring = self.PILimage.convert(mode).tostring(encoder, mode)
 		if( not PILstring ): return False
@@ -60,7 +60,7 @@ class DisplayArea(QWidget):
 		return retval
 
 	def paintEvent(self, event):
-		"""Zeichnet das Bild erneut"""
+		"""Repaints the image"""
 		if(self.image == None): return
 		painter = QPainter(self)
 		
@@ -95,7 +95,7 @@ class DisplayArea(QWidget):
 		painter.restore()
 
 	def setZoomFactor(self, factor):
-		"""Setzt den Zoom-Faktor des Bildes"""
+		"""Scales the image"""
 		if( self.zoomFactor == factor ): return
 		
 		self.zoomFactor = factor
@@ -117,19 +117,19 @@ class DisplayArea(QWidget):
 #		scrollbar.setValue(int(factor*scrollbar.value()) + ((factor-1) * scrollbar.pageStep()/2))
 	
 	def zoomIn(self):
-		"""Zoomt um einen festen Betrag ein"""
+		"""Zooms in"""
 		newZoomFactor = self.zoomFactor + self.ZOOM_STEP
 		if( newZoomFactor >= self.MAX_ZOOM ):
 			newZoomFactor = self.MAX_ZOOM
 		self.setZoomFactor(newZoomFactor)
 
 	def zoomOut(self):
-		"""Zoomt um einen festen Betrag aus"""
+		"""Zoomsout"""
 		newZoomFactor = self.zoomFactor - self.ZOOM_STEP
 		if( newZoomFactor <= self.MIN_ZOOM ):
 			newZoomFactor = self.MIN_ZOOM
 		self.setZoomFactor(newZoomFactor)
 
 	def zoomFull(self):
-		"""Setzt den Zoom auf 100%"""
+		"""Zooms to 1.0 (100%)"""
 		self.setZoomFactor(1.0)

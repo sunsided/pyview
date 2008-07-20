@@ -19,7 +19,8 @@ def main():
 	# localize Qt
 	# Siehe: http://www.riverbankcomputing.co.uk/static/Docs/PyQt4/html/qtranslator.html
 	translator = QTranslator()
-	translator.load("qt_de", "/usr/share/qt4/translations")
+	# translator.load("qt_de", "/usr/share/qt4/translations")
+	translator.load("pyview_de")
 	app.installTranslator(translator)
 
 	# Create main application window

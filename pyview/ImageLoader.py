@@ -7,6 +7,8 @@
 from threading import Thread
 
 class ImageLoader(Thread):
+	"""Helper class for asynchronous image loading"""
+	
 	def __init__(self, displayArea):
 		self.displayArea = displayArea
 		Thread.__init__(self)

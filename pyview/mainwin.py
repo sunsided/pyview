@@ -13,7 +13,7 @@ from threading import Thread
 from PyQt4.QtGui import QMessageBox, QMainWindow, QPalette, \
 						QIcon, QScrollArea, QActionGroup, QAction, QFileDialog, \
 						QMessageBox, QDesktopWidget
-from PyQt4.QtCore import SIGNAL, SLOT, QVariant, QUrl, QStringList
+from PyQt4.QtCore import SIGNAL, SLOT, QVariant, QUrl, QStringList, QObject
 from PyQt4.QtOpenGL import QGLFormat
 from optparse import OptionParser
 from DisplayArea import DisplayArea
@@ -26,9 +26,9 @@ class ApplicationWindow(QMainWindow):
 	
 	This is pyview's main window."""
 	
-	# Kontanten
-	APPNAME = "pyview"
-	APPVERSION = "0.1"
+	# Constants
+	APPNAME = None
+	APPVERSION = None
 
 	# Membervariablen
 	lastOpenedFile = None
@@ -46,6 +46,10 @@ class ApplicationWindow(QMainWindow):
 	def __init__(self, parent=None):
 		"""Initialisiert das Anwendungsfenster"""
 		QMainWindow.__init__(self, parent)
+		
+		# Initialize app name and version
+		self.APPVERSION = "0.1"
+		self.APPNAME = self.tr("Image viewer")
 		
 		# Kommandozeilenoptionen, Teil 1
 		self.buildCmdLineParser()
@@ -69,13 +73,13 @@ class ApplicationWindow(QMainWindow):
 		# Das Display-Widget
 		openGLsupport = QGLFormat.hasOpenGL()
 		if( self.cmdLineOptions.openGL and openGLsupport):
-			print "Using OpenGL engine."
+			print("Using OpenGL engine.")
 			self.displayArea = GLDisplayArea() #DisplayArea()
 		else:
 			if( openGLsupport ):
-				print "Not using OpenGL engine."
+				print("Not using OpenGL engine.")
 			else:
-				print "Not using OpenGL engine: OpenGL rendering not supported."
+				print("Not using OpenGL engine: OpenGL rendering not supported.")
 			self.displayArea = DisplayArea()
 		
 		# Scroll Area
@@ -108,27 +112,27 @@ class ApplicationWindow(QMainWindow):
 		menuBar = self.menuBar()
 		
 		# Menüeintrag zum Laden eines Bildes
-		menuFileOpen = QAction(QIcon("icons/Load.png"), "&Laden ...", self)
-		menuFileOpen.setShortcut("O")
-		menuFileOpen.setStatusTip("Eine Bilddatei laden")
+		menuFileOpen = QAction(QIcon("icons/Load.png"), self.tr("&Open ..."), self)
+		menuFileOpen.setShortcut(self.tr("O", "File|Open"))
+		menuFileOpen.setStatusTip(self.tr("Opens a picture"))
 		self.connect(menuFileOpen, SIGNAL("triggered()"), self.openImageDialog)
 		
 		# Menüeintrag zum Laden eines Bildes
-		menuFileReopen = QAction(QIcon("icons/Load.png"), "&Erneut laden", self)
-		menuFileReopen.setShortcut("SHIFT+R")
-		menuFileReopen.setStatusTip("Letzte Bilddatei erneut laden")
+		menuFileReopen = QAction(QIcon("icons/Load.png"), self.tr("&Reload picture"), self)
+		menuFileReopen.setShortcut(self.tr("SHIFT+R", "File|Reload"))
+		menuFileReopen.setStatusTip(self.tr("Reloads the last opened picture"))
 		menuFileReopen.setEnabled(False)
 		self.connect(menuFileReopen, SIGNAL("triggered()"), self.reOpenImage)
 		self.connect(self, SIGNAL("imageLoaded(bool)"), menuFileReopen, SLOT("setEnabled(bool)"))
 		
 		# Menüeintrag zum Beenden
-		menuFileExit = QAction(QIcon("icons/exit.gif"), "&Beenden", self)
-		menuFileExit.setShortcut("ESC")
-		menuFileExit.setStatusTip("Beendet das Programm")
+		menuFileExit = QAction(QIcon("icons/exit.gif"), self.tr("&Quit"), self)
+		menuFileExit.setShortcut(self.tr("ESC", "File|Quit"))
+		menuFileExit.setStatusTip(self.tr("Quits the application"))
 		self.connect(menuFileExit, SIGNAL("triggered()"), SLOT("close()"))
 		
 		# Dateimenü
-		file = menuBar.addMenu("&Datei")	
+		file = menuBar.addMenu(self.tr("&File"))	
 		self.addAction(menuFileOpen)
 		file.addAction(menuFileOpen)
 		self.addAction(menuFileReopen)
@@ -138,77 +142,77 @@ class ApplicationWindow(QMainWindow):
 		file.addAction(menuFileExit)
 		
 		# Vollbild-Menüeintrag
-		menuViewFullScreen = QAction(QIcon("icons/Loading.png"), "&Vollbild", self)
-		menuViewFullScreen.setShortcut("RETURN")
-		menuViewFullScreen.setStatusTip("Wechselt in den Vollbildmodus")
+		menuViewFullScreen = QAction(QIcon("icons/Loading.png"), self.tr("&Fullscreen"), self)
+		menuViewFullScreen.setShortcut(self.tr("RETURN", "View|Fullscreen"))
+		menuViewFullScreen.setStatusTip(self.tr("Switches to fullscreen mode"))
 		menuViewFullScreen.setCheckable(True)
 		menuViewFullScreen.setChecked(bool(self.cmdLineOptions.fullScreen))
 		menuViewFullScreen.connect(menuViewFullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
 		
-		menuViewZoomIn = QAction(u"Ver&größern", self)
-		menuViewZoomIn.setShortcut("+")
-		menuViewZoomIn.setStatusTip(u"Vergrößert die Ansicht")
+		menuViewZoomIn = QAction(self.tr("Zoom &in"), self)
+		menuViewZoomIn.setShortcut(self.tr("+", "View|Zoom in"))
+		menuViewZoomIn.setStatusTip(self.tr("Zooms in"))
 		menuViewZoomIn.connect(menuViewZoomIn, SIGNAL("triggered()"), self.displayArea.zoomIn)
 
-		menuViewZoomOut = QAction(u"Ver&kleinern", self)
-		menuViewZoomOut.setShortcut("-")
-		menuViewZoomOut.setStatusTip(u"Verkleinert die Ansicht")
+		menuViewZoomOut = QAction(self.tr("Zoom &out"), self)
+		menuViewZoomOut.setShortcut(self.tr("-", "View|Zoom out"))
+		menuViewZoomOut.setStatusTip(self.tr("Zooms out"))
 		menuViewZoomOut.connect(menuViewZoomOut, SIGNAL("triggered()"), self.displayArea.zoomOut)
 
-		menuViewZoomFull = QAction(u"&Originalgröße", self)
-		menuViewZoomFull.setShortcut("STRG+H")
-		menuViewZoomFull.setStatusTip("Zoomt die Ansicht auf 100%")
+		menuViewZoomFull = QAction(self.tr("&Original size"), self)
+		menuViewZoomFull.setShortcut(self.tr("STRG+H", "View|Sizes"))
+		menuViewZoomFull.setStatusTip(self.tr("Zooms the view 100%"))
 		menuViewZoomFull.connect(menuViewZoomFull, SIGNAL("triggered()"), self.displayArea.zoomFull)
 		
 		# Anzeigemodi
-		menuViewWindowToImageSize = QAction("Fenster ans Bild anpassen (1:1, empfo&hlen)", self)
+		menuViewWindowToImageSize = QAction(self.tr("Scale window to picture (1:1, &recommended)"), self)
 		menuViewWindowToImageSize.setCheckable(True)
 		menuViewWindowToImageSize.setProperty("tag", QVariant("WindowToImageSize"))
-		menuViewWindowToImageSize.setStatusTip(u"Passt das Fenster an die Bildgröße an")
+		menuViewWindowToImageSize.setStatusTip(self.tr("Scales the window to fit the image size"))
 		
-		menuViewSizeToFit = QAction("Bild ans Fenster anpa&ssen", self)
+		menuViewSizeToFit = QAction(self.tr("Scale picture to window"), self)
 		menuViewSizeToFit.setCheckable(True)
 		menuViewSizeToFit.setProperty("tag", QVariant("SizeToFit"))
-		menuViewSizeToFit.setStatusTip(u"Passt das Bild an die Fenstergröße an")
+		menuViewSizeToFit.setStatusTip(self.tr("Scales the picture to fit the window size"))
 
-		menuViewSizeLargeToFit = QAction(u"Nur große Bilder ans Fenster anpa&ssen", self)
+		menuViewSizeLargeToFit = QAction(self.tr("Scale large images only"), self)
 		menuViewSizeLargeToFit.setCheckable(True)
 		menuViewSizeLargeToFit.setProperty("tag", QVariant("SizeLargeToFit"))
-		menuViewSizeLargeToFit.setStatusTip(u"Passt das Bild an die Fenstergröße an")
+		menuViewSizeLargeToFit.setStatusTip(self.tr("Only scales large images to fit the window size"))
 		
-		menuViewFitToScreen = QAction("Fenster/Bild an Bildschirm anpassen", self)
+		menuViewFitToScreen = QAction(self.tr("Scale window/picture to fit the screen"), self)
 		menuViewFitToScreen.setCheckable(True)
 		menuViewFitToScreen.setShortcut("F")
 		menuViewFitToScreen.setProperty("tag", QVariant("FitToScreen"))
-		menuViewFitToScreen.setStatusTip(u"Passt Fenster und Bild an die Bildschirmgröße an")
+		menuViewFitToScreen.setStatusTip(self.tr("Scales the window or picture to fit the screen size"))
 		
-		menuViewFitLargeToScreen = QAction(u"Nur große Bilder an Bildschirm anpassen", self)
+		menuViewFitLargeToScreen = QAction(self.tr("Scale large images to screen only"), self)
 		menuViewFitLargeToScreen.setCheckable(True)
 		menuViewFitLargeToScreen.setProperty("tag", QVariant("FitLargeToScreen"))
-		menuViewFitLargeToScreen.setStatusTip(u"Passt große Bilder an die Bildschirmgröße an")
+		menuViewFitLargeToScreen.setStatusTip(self.tr("Scales large images to the screen size only"))
 		
-		menuViewFitToScreenWidth = QAction("Bilder an Bildschirmbreite anpassen", self)
+		menuViewFitToScreenWidth = QAction(self.tr("Scale images to screen width"), self)
 		menuViewFitToScreenWidth.setCheckable(True)
 		menuViewWindowToImageSize.setProperty("tag", QVariant("FitToScreenWidth"))
-		menuViewFitToScreenWidth.setStatusTip("Passt Bilder an die Bildschirmbreite an")
+		menuViewFitToScreenWidth.setStatusTip(self.tr("Scales the images to fit the screen width"))
 		
-		menuViewFitToScreenHeight = QAction(u"Bilder an Bildschirmhöhe anpassen", self)
+		menuViewFitToScreenHeight = QAction(self.tr("Scale images to screen height"), self)
 		menuViewFitToScreenHeight.setCheckable(True)
 		menuViewFitToScreenHeight.setProperty("tag", QVariant("FitToScreenHeight"))
-		menuViewFitToScreenHeight.setStatusTip(u"Passt Bilder an die Bildschirmhöhe an")
+		menuViewFitToScreenHeight.setStatusTip(self.tr("Scales images to fit the screen height"))
 		
-		menuViewNoFit = QAction(u"Keine A&npassung durchführen", self)
+		menuViewNoFit = QAction(self.tr("Do&n't scale"), self)
 		menuViewNoFit.setCheckable(True)
 		menuViewNoFit.setProperty("tag", QVariant("NoFit"))
-		menuViewNoFit.setStatusTip("Bilder werden nicht angepasst")
+		menuViewNoFit.setStatusTip(self.tr("Images are not scaled"))
 		
 		# Ansichtsmenü
-		view = menuBar.addMenu("&Ansicht")
+		view = menuBar.addMenu(self.tr("&View"))
 		self.addAction(menuViewFullScreen)
 		view.addAction(menuViewFullScreen)
 		
 		# Anzeige-OptionsMenü
-		viewOptionsWindowed = view.addMenu("&Anzeige-Optionen (Fenstermodus)")
+		viewOptionsWindowed = view.addMenu(self.tr("&Display options (Window mode)"))
 		viewOptionsWindowedGroup = QActionGroup(self)
 		viewOptionsWindowedGroup.addAction(menuViewWindowToImageSize)
 		viewOptionsWindowedGroup.addAction(menuViewSizeToFit)
@@ -256,25 +260,25 @@ class ApplicationWindow(QMainWindow):
 		if( source == 0 or source == 1 ):
 			if( loading ):
 				print "Loading file ..."
-				self.setStatusTip("Lade Datei ...")
+				self.setStatusTip(self.tr("Loading file ..."))
 			else:
 				if( success ):
 					print "Done loading of file."
-					self.setStatusTip("Laden von Datei abgeschlossen.")
+					self.setStatusTip(self.tr("File loaded."))
 				else:
 					print "Canceled loading of file."
-					self.setStatusTip("Laden von Datei abgebrochen.")
+					self.setStatusTip(self.tr("Loading of file canceled."))
 		else:
 			if( loading ):
 				print "Loading remote file..."
-				self.setStatusTip("Lade entfernte Datei ...")
+				self.setStatusTip(self.tr("Loading remote file ..."))
 			else:
 				if( success ):
 					print "Done loading remote file."
-					self.setStatusTip("Laden von entfernter Datei abgeschlossen.")
+					self.setStatusTip(self.tr("Remote file loaded."))
 				else:
 					print "Canceled loading remote file."
-					self.setStatusTip("Laden von entfernter Datei abgebrochen.")
+					self.setStatusTip(self.tr("Loading of remote file canceled."))
 	
 	def notifyFileLoaded(self, state):
 		"""Called when a file is loaded"""	
@@ -338,8 +342,8 @@ class ApplicationWindow(QMainWindow):
 		# Dateifilter definieren
 		# TODO: Sinnvolle Lösung finden, in aller Regel durch eine Liste bekannter Typen
 		filters = QStringList()
-		filters << "Bilder (*.jpg *.gif *.png *.xpm)"
-		filters << "Alle Dateien (*)"
+		filters << self.tr("Pictures", "File filter") + " (*.jpg *.gif *.png *.xpm)"
+		filters << self.tr("All files") + " (*)"
 		
 		# Dialog anzeigen
 		dialog = QFileDialog(self)
@@ -475,7 +479,7 @@ class ApplicationWindow(QMainWindow):
 		"""Called when the application is about to close"""
 
 		if( self.askBeforeClosing ):
-			reply = QMessageBox.question(self, "Programm beenden", "Sind Sie sicher?", QMessageBox.Yes, QMessageBox.No)
+			reply = QMessageBox.question(self, self.tr("Close the program?"), self.tr("Are you sure?"), QMessageBox.Yes, QMessageBox.No)
 	
 			if reply == QMessageBox.Yes:
 				event.accept()
@@ -542,7 +546,7 @@ class ApplicationWindow(QMainWindow):
 
 		versionString = self.APPNAME + " v" + self.APPVERSION
 		usageString = "%prog [Optionen] [Dateiname]"
-		descString = "Ein einfacher Bildbetrachter im Stil von IrfanView"
+		descString = self.tr("A simple picture viewer that wants to be like IrfanView")
 		
 		# Parser erstellen
 		cmdOptParser = OptionParser(usage = usageString, 
@@ -552,16 +556,16 @@ class ApplicationWindow(QMainWindow):
 		# Optionen definieren
 		cmdOptParser.add_option("-f", "--fullscreen", dest="fullScreen", 
 								action="store_true", default=False,
-								help="start in fullscreen mode")
+								help=self.tr("start in fullscreen mode"))
 		cmdOptParser.add_option("--no-tempclean", dest="tempClean", 
 								action="store_false", default=True,
-								help="don't delete cached files when exiting")
+								help=self.tr("don't delete cached files when exiting"))
 		cmdOptParser.add_option("-d", "--directory", dest="directory", default=None,
-								help="start in DIRECTORY. If an image is loaded through the command line, the directory of the image is used instead", 
+								help=self.tr("start in DIRECTORY. If an image is loaded through the command line, the directory of the image is used instead"), 
 								metavar="DIRECTORY")
 		cmdOptParser.add_option("--no-opengl", dest="openGL", 
 								action="store_false", default=True,
-								help="don't use the OpenGL render engine'")
+								help=self.tr("don't use the OpenGL render engine'"))
 
 		
 		# Parsen

@@ -5,7 +5,7 @@
 # pylint: disable-msg=W0511
 
 class ImageSource:
-	"""Aufzählungen der Bildquellen"""
+	"""Enumeration of the image sources"""
 	def __init__(self):
 		pass
 	UNKNOWN = 0
