@@ -1,2 +1,6 @@
 *.pyc
 .settings
+__init__.py
+Ui_MainWindow.py
+__init__.pyc
+Ui_MainWindow.pyc

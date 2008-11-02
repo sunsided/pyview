@@ -1,0 +1,31 @@
+#!/bin/sh
+HI="\033[4m"
+ERR="\033[31;1m"
+N="\033[0m"
+PREFIX="Ui_"
+echo "Compiling Qt4 UI files in folder $H`pwd`$N"
+for file in *.ui
+do
+	_basefile=`basename $file .ui`
+	_pyfile="$PREFIX$_basefile.py"
+	_pyfilec="$PREFIX$_basefile.pyc"
+	echo " * Compiling $HI$file$N to $HI$_pyfile$N"
+	if [ -f $_pyfile ]
+		then
+		echo "   Deleting existing $_pyfile"
+		rm $_pyfile
+	fi 
+	if [ -f $_pyfilec ]
+		then
+		echo "   Deleting existing $_pyfilec"
+		rm $_pyfilec
+	fi
+	pyuic4 -o $_pyfile $file
+	if [ $? -ne 0 ]
+		then
+		echo "  $ERR Error compiling $HI$file$N$ERR. Aborting.$N"
+		exit 255
+	fi
+done
+echo "All files compiled."
+exit 0
