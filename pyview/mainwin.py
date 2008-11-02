@@ -12,16 +12,16 @@ import sys, os
 from threading import Thread
 from PyQt4.QtGui import QMessageBox, QMainWindow, QPalette, \
 						QIcon, QScrollArea, QActionGroup, QAction, QFileDialog, \
-						QMessageBox, QDesktopWidget, QIconSet, QPixmap
+						QMessageBox, QDesktopWidget
 from PyQt4.QtCore import SIGNAL, SLOT, QVariant, QUrl, QStringList, QObject
 from PyQt4.QtOpenGL import QGLFormat
 from optparse import OptionParser
 from DisplayArea import DisplayArea
 from GLDisplayArea import GLDisplayArea
 from ImageSource import ImageSource
+from ui.mainwin import Ui_MainWindow
 
-
-class ApplicationWindow(QMainWindow):
+class ApplicationWindow(QMainWindow, Ui_MainWindow):
 	"""ApplicationWindow
 	
 	This is pyview's main window."""
@@ -49,6 +49,7 @@ class ApplicationWindow(QMainWindow):
 	def __init__(self, parent=None):
 		"""Initialisiert das Anwendungsfenster"""
 		QMainWindow.__init__(self, parent)
+		self.setupUi(self)
 		
 		# Initialize app name and version
 		self.APPVERSION = "0.1"
@@ -83,167 +84,12 @@ class ApplicationWindow(QMainWindow):
 				print("Not using OpenGL engine.")
 			else:
 				print("Not using OpenGL engine: OpenGL rendering not supported.")
-			self.displayArea = DisplayArea()
-		
-		# Scroll Area
-		self.scrollArea = QScrollArea(self)
-		# TODO: Benutzerdefinierte Farbe
-		self.scrollArea.setBackgroundRole(QPalette.Dark)
-		#self.scrollArea.setAlignment(Qt.AlignVCenter | Qt.AlignHCenter)
-		#self.scrollArea.setWidgetResizable(True)
-		self.scrollArea.setWidget(self.displayArea)
-		self.setCentralWidget(self.scrollArea)
-
-		# Menü erstellen
-		self.buildMenu()
+			self.displayArea = DisplayArea()		
 		
 		# Weitere Hooks
 		self.connect(self, SIGNAL("imageLoaded(bool)"), self.notifyFileLoaded)
 		self.connect(self, SIGNAL("imageLoading(bool, int, bool)"), self.notifyFileLoading)
-		self.connect(self.scrollArea.verticalScrollBar(), SIGNAL("valueChanged(int)"), self.imageAreaScrolled)
-		self.connect(self.scrollArea.verticalScrollBar(), SIGNAL("valueChanged(int)"), self.imageAreaScrolled)
-		
-	def imageAreaScrolled(self, value):
-		self.displayArea.repaint()
-		
-	def buildMenu(self):
-		"""Creates the menus and applies the shortcuts"""
-		
-		# Menüzeile
-		# http://zetcode.com/tutorials/pyqt4/menusandtoolbars/
-		# http://lists.trolltech.com/qt-interest/2007-07/thread00771-0.html
-		menuBar = self.menuBar()
-		
-		# Menüeintrag zum Laden eines Bildes
-		# "icons/Load.png"
-		self.actions["fileOpen"] = QAction( 
-										self.tr("Open"), 
-										QIconSet(QPixmap(filenew)), 
-										self.tr("&Open ..."),
-										self)
-		self.actions["fileOpen"].setShortcut(self.tr("O", "File|Open"))
-		#menuFileOpen.setStatusTip(self.tr("Opens a picture"))
-		self.connect(self.actions["fileOpen"], SIGNAL("triggered()"), self.openImageDialog)
-		
-		# Menüeintrag zum Laden eines Bildes
-		menuFileReopen = QAction(QIcon("icons/Load.png"), self.tr("&Reload picture"), self)
-		menuFileReopen.setShortcut(self.tr("SHIFT+R", "File|Reload"))
-		menuFileReopen.setStatusTip(self.tr("Reloads the last opened picture"))
-		menuFileReopen.setEnabled(False)
-		self.connect(menuFileReopen, SIGNAL("triggered()"), self.reOpenImage)
-		self.connect(self, SIGNAL("imageLoaded(bool)"), menuFileReopen, SLOT("setEnabled(bool)"))
-		
-		# Menüeintrag zum Beenden
-		menuFileExit = QAction(QIcon("icons/exit.gif"), self.tr("&Quit"), self)
-		menuFileExit.setShortcut(self.tr("ESC", "File|Quit"))
-		menuFileExit.setStatusTip(self.tr("Quits the application"))
-		self.connect(menuFileExit, SIGNAL("triggered()"), SLOT("close()"))
-		
-		# Dateimenü
-		file = menuBar.addMenu(self.tr("&File"))	
-		self.addAction(self.actions["fileOpen"])
-		file.addAction(self.actions["fileOpen"])
-		self.addAction(menuFileReopen)
-		file.addAction(menuFileReopen)
-		file.addSeparator()
-		self.addAction(menuFileExit)
-		file.addAction(menuFileExit)
-		
-		# Vollbild-Menüeintrag
-		menuViewFullScreen = QAction(QIcon("icons/Loading.png"), self.tr("&Fullscreen"), self)
-		menuViewFullScreen.setShortcut(self.tr("RETURN", "View|Fullscreen"))
-		menuViewFullScreen.setStatusTip(self.tr("Switches to fullscreen mode"))
-		menuViewFullScreen.setCheckable(True)
-		menuViewFullScreen.setChecked(bool(self.cmdLineOptions.fullScreen))
-		menuViewFullScreen.connect(menuViewFullScreen, SIGNAL("triggered()"), self.toggleFullScreen)
-		
-		menuViewZoomIn = QAction(self.tr("Zoom &in"), self)
-		menuViewZoomIn.setShortcut(self.tr("+", "View|Zoom in"))
-		menuViewZoomIn.setStatusTip(self.tr("Zooms in"))
-		menuViewZoomIn.connect(menuViewZoomIn, SIGNAL("triggered()"), self.displayArea.zoomIn)
 
-		menuViewZoomOut = QAction(self.tr("Zoom &out"), self)
-		menuViewZoomOut.setShortcut(self.tr("-", "View|Zoom out"))
-		menuViewZoomOut.setStatusTip(self.tr("Zooms out"))
-		menuViewZoomOut.connect(menuViewZoomOut, SIGNAL("triggered()"), self.displayArea.zoomOut)
-
-		menuViewZoomFull = QAction(self.tr("&Original size"), self)
-		menuViewZoomFull.setShortcut(self.tr("STRG+H", "View|Sizes"))
-		menuViewZoomFull.setStatusTip(self.tr("Zooms the view 100%"))
-		menuViewZoomFull.connect(menuViewZoomFull, SIGNAL("triggered()"), self.displayArea.zoomFull)
-		
-		# Anzeigemodi
-		menuViewWindowToImageSize = QAction(self.tr("Scale window to picture (1:1, &recommended)"), self)
-		menuViewWindowToImageSize.setCheckable(True)
-		menuViewWindowToImageSize.setProperty("tag", QVariant("WindowToImageSize"))
-		menuViewWindowToImageSize.setStatusTip(self.tr("Scales the window to fit the image size"))
-		
-		menuViewSizeToFit = QAction(self.tr("Scale picture to window"), self)
-		menuViewSizeToFit.setCheckable(True)
-		menuViewSizeToFit.setProperty("tag", QVariant("SizeToFit"))
-		menuViewSizeToFit.setStatusTip(self.tr("Scales the picture to fit the window size"))
-
-		menuViewSizeLargeToFit = QAction(self.tr("Scale large images only"), self)
-		menuViewSizeLargeToFit.setCheckable(True)
-		menuViewSizeLargeToFit.setProperty("tag", QVariant("SizeLargeToFit"))
-		menuViewSizeLargeToFit.setStatusTip(self.tr("Only scales large images to fit the window size"))
-		
-		menuViewFitToScreen = QAction(self.tr("Scale window/picture to fit the screen"), self)
-		menuViewFitToScreen.setCheckable(True)
-		menuViewFitToScreen.setShortcut("F")
-		menuViewFitToScreen.setProperty("tag", QVariant("FitToScreen"))
-		menuViewFitToScreen.setStatusTip(self.tr("Scales the window or picture to fit the screen size"))
-		
-		menuViewFitLargeToScreen = QAction(self.tr("Scale large images to screen only"), self)
-		menuViewFitLargeToScreen.setCheckable(True)
-		menuViewFitLargeToScreen.setProperty("tag", QVariant("FitLargeToScreen"))
-		menuViewFitLargeToScreen.setStatusTip(self.tr("Scales large images to the screen size only"))
-		
-		menuViewFitToScreenWidth = QAction(self.tr("Scale images to screen width"), self)
-		menuViewFitToScreenWidth.setCheckable(True)
-		menuViewWindowToImageSize.setProperty("tag", QVariant("FitToScreenWidth"))
-		menuViewFitToScreenWidth.setStatusTip(self.tr("Scales the images to fit the screen width"))
-		
-		menuViewFitToScreenHeight = QAction(self.tr("Scale images to screen height"), self)
-		menuViewFitToScreenHeight.setCheckable(True)
-		menuViewFitToScreenHeight.setProperty("tag", QVariant("FitToScreenHeight"))
-		menuViewFitToScreenHeight.setStatusTip(self.tr("Scales images to fit the screen height"))
-		
-		menuViewNoFit = QAction(self.tr("Do&n't scale"), self)
-		menuViewNoFit.setCheckable(True)
-		menuViewNoFit.setProperty("tag", QVariant("NoFit"))
-		menuViewNoFit.setStatusTip(self.tr("Images are not scaled"))
-		
-		# Ansichtsmenü
-		view = menuBar.addMenu(self.tr("&View"))
-		self.addAction(menuViewFullScreen)
-		view.addAction(menuViewFullScreen)
-		
-		# Anzeige-OptionsMenü
-		viewOptionsWindowed = view.addMenu(self.tr("&Display options (Window mode)"))
-		viewOptionsWindowedGroup = QActionGroup(self)
-		viewOptionsWindowedGroup.addAction(menuViewWindowToImageSize)
-		viewOptionsWindowedGroup.addAction(menuViewSizeToFit)
-		viewOptionsWindowedGroup.addAction(menuViewSizeLargeToFit)
-		#viewOptionsWindowedGroup.addSeparator()
-		# self.addAction(menuViewFitToScreen)
-		viewOptionsWindowedGroup.addAction(menuViewFitToScreen)
-		viewOptionsWindowedGroup.addAction(menuViewFitLargeToScreen)
-		#viewOptionsWindowedGroup.addSeparator()
-		viewOptionsWindowedGroup.addAction(menuViewFitToScreenWidth)
-		viewOptionsWindowedGroup.addAction(menuViewFitToScreenHeight)
-		viewOptionsWindowedGroup.addAction(menuViewNoFit)
-		viewOptionsWindowedGroup.connect(viewOptionsWindowedGroup, SIGNAL("triggered(QAction*)"), self.trigger)
-		viewOptionsWindowed.addActions(viewOptionsWindowedGroup.actions())
-	
-		view.addSeparator()
-		self.addAction(menuViewZoomIn)
-		view.addAction(menuViewZoomIn)
-		self.addAction(menuViewZoomOut)
-		view.addAction(menuViewZoomOut)
-		self.addAction(menuViewZoomFull)
-		view.addAction(menuViewZoomFull)
-	
 	def trigger(self, action):
 		print "Selected Menu: " + action.property("tag").toString()
 	
