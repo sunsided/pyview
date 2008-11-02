@@ -3,7 +3,9 @@
 
 # pyview
 # Main Window GUI
-"""Main Window GUI for the pyview image viewer"""
+"""
+Main Window GUI for the pyview image viewer
+"""
 
 import sys
 from PyQt4 import QtGui, QtCore
@@ -12,6 +14,9 @@ from ui.Ui_MainWindow import Ui_MainWindow
 # Main Window class
 
 class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
+	"""
+	This class represents the main window of the image viewer
+	"""
 
 	# Initializes the class
 	def __init__(self):
@@ -19,6 +24,19 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		print("Initializing main window")
 		QtGui.QMainWindow.__init__(self)
 		self.setupUi(self)
+
+		# Set options
+		self.setAskOnExit(False)
+		return
+
+	# Options
+	def setAskOnExit(self, enabled):
+		"""
+		If enabled, the user will be asked if the window
+		is about to close. If disabled, the window will close
+		without further intervention
+		"""
+		self.AskOnExit = enabled
 		return
 
 	# Center the window on the screen
@@ -38,6 +56,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		y = (screenHeight-height) / 2
 		# Set position
 		self.move(x, y)
+		return
 
 	# Quit button was clicked
 	@QtCore.pyqtSignature("")
@@ -48,6 +67,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 	# Overrides the default behavior for the window close event
 	def closeEvent(self, event):
+		# Check if asking is enabled
+		if not self.AskOnExit:
+			return
+
+		# Ask
 		reply = QtGui.QMessageBox.question(self, 
 				self.tr("Closing ..."),
 				self.tr("Are you sure you want to quit?"),
