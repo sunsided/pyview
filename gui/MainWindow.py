@@ -19,6 +19,25 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		print("Initializing main window")
 		QtGui.QMainWindow.__init__(self)
 		self.setupUi(self)
+		return
+
+	# Center the window on the screen
+	def centerWindow(self):
+		"""Centers the window on the screen"""
+		print("Centering window on screen")
+		# Get desktop size
+		desktop = QtGui.QApplication.desktop()
+		screenWidth = desktop.width()
+		screenHeight = desktop.height()
+		# Get window size
+		windowSize = self.size()
+		width = windowSize.width()
+		height = windowSize.height()
+		# Calculate new position
+		x = (screenWidth-width) / 2
+		y = (screenHeight-height) / 2
+		# Set position
+		self.move(x, y)
 
 	# Quit button was clicked
 	@QtCore.pyqtSignature("")
@@ -46,5 +65,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 if __name__ == "__main__":
 	app = QtGui.QApplication(sys.argv)
 	window = MainWindow()
+	window.centerWindow()
 	window.show()
 	sys.exit(app.exec_())
