@@ -26,13 +26,10 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		QtGui.QMainWindow.__init__(self)
 		self.setupUi(self)
 
-		# Set background frame
-		self.setCentralWidget(self.backgroundFrame)
+		# Set picture frame
+		self.pictureFrame = PictureFrame(self)
+		self.setCentralWidget(self.pictureFrame)
 		self.setImageAreaBackgroundColor("#909090")
-
-		# Set widgets
-		self.pictureFrame = PictureFrame()
-		#self.gridLayout.addWidget(self.pictureFrame, 0, 0)
 
 		# Set options
 		self.setAskOnExit(False)
@@ -47,11 +44,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		The color is a string with a hex RGB color code,
 		i.e. "#FF0000" for red
 		"""
-		self.backgroundFrame.setAutoFillBackground(True)
-		self.backgroundFrame.setBackgroundRole(
+		self.pictureFrame.setAutoFillBackground(True)
+		self.pictureFrame.setBackgroundRole(
 				QtGui.QPalette.Window
 				)
-		self.backgroundFrame.palette().setColor(
+		self.pictureFrame.palette().setColor(
 				QtGui.QPalette.Background,
 				QtGui.QColor(color)
 				)
@@ -117,14 +114,31 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	@QtCore.pyqtSignature("")
 	def on_action_Repaint_triggered(self):
 		print("Repaint action triggered")
-		self.pictureFrame.repaint(self.pictureFrame.rect())
+		self.pictureFrame.forceRepaint()
 		return
+
+	# Checks for the right scrollbar
+	def isVerticalScrollbarNeeded(self):
+		"""
+		Determines whether the vertical (right) scrollbar is currently
+		needed or not.
+		"""
+		# TODO: Implement
+		return False
+	
+	# Checks for the bottom scrollbar
+	def isHorizontalScrollbarNeeded(self):
+		"""
+		Determines whether the horizontal (bottom) scrollbar is currently
+		needed or not.
+		"""
+		# TODO: Implement
+		return False
 
 	# Handles the resize event
 	def resizeEvent(self, event):
-		print("resized")
-		# TODO: Disable picture frame update
-		# TODO: Reposition elements
+		print("MainWindow resized")
+		# TODO: Disable picture frame update	
 		# TODO: Rescale image and repaint frame, if necessary
 		# TODO: Enable picture frame update
 		return
