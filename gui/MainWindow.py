@@ -54,7 +54,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.backgroundFrame.palette().setColor(
 				QtGui.QPalette.Background,
 				QtGui.QColor(color)
-				)		
+				)
 		return
 
 	# Sets whether a dialog box shall be shown when the
@@ -120,10 +120,13 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.pictureFrame.repaint(self.pictureFrame.rect())
 		return
 
-	# Paints the widget
-	def pictureFramePaintEvent(self, event):
-		# The event is a QPaintEvent
-		print("paint")
+	# Handles the resize event
+	def resizeEvent(self, event):
+		print("resized")
+		# TODO: Disable picture frame update
+		# TODO: Reposition elements
+		# TODO: Rescale image and repaint frame, if necessary
+		# TODO: Enable picture frame update
 		return
 
 # Testing
