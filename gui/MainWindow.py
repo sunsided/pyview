@@ -10,6 +10,7 @@ Main Window GUI for the pyview image viewer
 import sys
 from PyQt4 import QtGui, QtCore
 from ui.Ui_MainWindow import Ui_MainWindow
+from PictureFrame import PictureFrame
 
 # Main Window class
 
@@ -25,11 +26,39 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		QtGui.QMainWindow.__init__(self)
 		self.setupUi(self)
 
+		# Set background frame
+		self.setCentralWidget(self.backgroundFrame)
+		self.setImageAreaBackgroundColor("#909090")
+
+		# Set widgets
+		self.pictureFrame = PictureFrame()
+		#self.gridLayout.addWidget(self.pictureFrame, 0, 0)
+
 		# Set options
 		self.setAskOnExit(False)
 		return
 
 	# Options
+
+	# Sets the background color
+	def setImageAreaBackgroundColor(self, color):
+		"""
+		Sets the background color of the image area.
+		The color is a string with a hex RGB color code,
+		i.e. "#FF0000" for red
+		"""
+		self.backgroundFrame.setAutoFillBackground(True)
+		self.backgroundFrame.setBackgroundRole(
+				QtGui.QPalette.Window
+				)
+		self.backgroundFrame.palette().setColor(
+				QtGui.QPalette.Background,
+				QtGui.QColor(color)
+				)		
+		return
+
+	# Sets whether a dialog box shall be shown when the
+	# window is about to close
 	def setAskOnExit(self, enabled):
 		"""
 		If enabled, the user will be asked if the window
@@ -82,6 +111,19 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			event.accept()
 		else:
 			event.ignore()
+		return
+
+	# Repaint action was triggered
+	@QtCore.pyqtSignature("")
+	def on_action_Repaint_triggered(self):
+		print("Repaint action triggered")
+		self.pictureFrame.repaint(self.pictureFrame.rect())
+		return
+
+	# Paints the widget
+	def pictureFramePaintEvent(self, event):
+		# The event is a QPaintEvent
+		print("paint")
 		return
 
 # Testing

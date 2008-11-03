@@ -10,9 +10,32 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>MainWindow</string>
+   <string>Image Viewer</string>
   </property>
-  <widget class="QWidget" name="centralwidget" />
+  <property name="locale" >
+   <locale country="UnitedStates" language="English" />
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <widget class="QFrame" name="backgroundFrame" >
+    <property name="geometry" >
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>471</width>
+      <height>231</height>
+     </rect>
+    </property>
+    <property name="frameShape" >
+     <enum>QFrame::NoFrame</enum>
+    </property>
+    <property name="frameShadow" >
+     <enum>QFrame::Raised</enum>
+    </property>
+    <property name="lineWidth" >
+     <number>0</number>
+    </property>
+   </widget>
+  </widget>
   <widget class="QMenuBar" name="menubar" >
    <property name="geometry" >
     <rect>
@@ -28,7 +51,14 @@
     </property>
     <addaction name="action_Quit" />
    </widget>
+   <widget class="QMenu" name="menu_Debug" >
+    <property name="title" >
+     <string>&amp;Debug</string>
+    </property>
+    <addaction name="action_Repaint" />
+   </widget>
    <addaction name="menu_File" />
+   <addaction name="menu_Debug" />
   </widget>
   <widget class="QStatusBar" name="statusbar" />
   <action name="action_Quit" >
@@ -40,6 +70,14 @@
    </property>
    <property name="shortcutContext" >
     <enum>Qt::ApplicationShortcut</enum>
+   </property>
+  </action>
+  <action name="action_Repaint" >
+   <property name="text" >
+    <string>Force &amp;repaint</string>
+   </property>
+   <property name="shortcut" >
+    <string>F5</string>
    </property>
   </action>
  </widget>
