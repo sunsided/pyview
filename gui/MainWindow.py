@@ -153,17 +153,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	def on_actionDebugRepaint_triggered(self):
 		self.pictureFrame.forceRepaint()
 		return
-		
-	# Repaint action was triggered
-	@QtCore.pyqtSignature("")
-	def on_actionDebugSwitchScrollbars_triggered(self):
-		self.pictureFrame.enableHorizontalScrollBar(
-				not self.pictureFrame.horizontalScrollBarEnabled
-			)
-		self.pictureFrame.enableVerticalScrollBar(
-				not self.pictureFrame.verticalScrollBarEnabled
-			)
-		return
 
 	# File handling
 	
