@@ -35,6 +35,17 @@ class PictureFrame(QtGui.QFrame):
 		
 		return
 
+	# Gives the frame a qimage to display
+	def takeImage(self, qimage):
+		"""
+		Gives the PictureFrame a qimage to display.
+		No further processing of the image will be done, except for 
+		alignment and scaling (if any)
+		"""
+		self.image = qimage
+		self.forceRepaint()
+		return
+
 	# Sets the background color
 	def setBackgroundColor(self, color):
 		"""Sets the color to be used for the background whenever the image
@@ -66,6 +77,7 @@ class PictureFrame(QtGui.QFrame):
 		
 		# Calculate the new viewport size
 		self.calculateViewport()
+		self.forceRepaint()
 		return
 
 	# Enables the horizontal scroll bar
@@ -102,10 +114,8 @@ class PictureFrame(QtGui.QFrame):
 			width -= self.verticalScrollBar.width()
 
 		# Set new viewport size
-		self.viewport = QtCore.QRectF(
-			self.rect().x(), self.rect().y(),
-			width, height
-			)
+		self.viewport = QtCore.QRect( 0, 0, width, height )
+		self.viewportF = QtCore.QRectF( 0, 0, width, height )
 		return
 
 	# Called when the frame got resized
@@ -120,10 +130,9 @@ class PictureFrame(QtGui.QFrame):
 		painter = QtGui.QPainter(self)
 
 		# Get the painting rectangle
-		viewport = self.viewport
-		# TODO: The painting region depends from the fact whether the scollbars are enabled or not
-
-		# Obtain brush and fill frame
+		viewport = self.viewportF
+		
+		# DEBUG: Obtain brush and fill frame
 		color1 = QtGui.QColor("#FF0000")
 		color2 = QtGui.QColor("#FF00FF")
 		gradient = QtGui.QLinearGradient(
@@ -134,13 +143,18 @@ class PictureFrame(QtGui.QFrame):
 		gradient.setColorAt(1, color2)
 		brush = QtGui.QBrush(gradient)
 		painter.fillRect(viewport, brush)
+		
+		# Paint the image
+		targetRect = viewport
+		sourceRect = QtCore.QRectF(0, 0, self.image.size().width(), self.image.size().height())
+		painter.drawImage(targetRect, self.image, sourceRect)
+		
 		return
 
 	# Paints the widget
 	def forceRepaint(self):
 		"""Forces a repaint of the PictureFrame"""
 		# Force repaint
-		print("PictureFrame repaint forced")
-		self.repaint(self.rect())
+		self.repaint(self.viewport)
 		return
 

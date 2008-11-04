@@ -18,12 +18,15 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	"""
 
 	# Initializes the class
-	def __init__(self):
+	def __init__(self, imageHelper):
 		# Initialize UI
 		print("Initializing main window")
 		QtGui.QMainWindow.__init__(self)
 		self.setupUi(self)
 		self.setupKeyboardHooks()
+
+		# Set classes
+		self.imageHelper = imageHelper
 
 		# Set picture frame
 		self.pictureFrame = PictureFrame(self)
@@ -150,6 +153,17 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	def on_actionDebugRepaint_triggered(self):
 		self.pictureFrame.forceRepaint()
 		return
+		
+	# Repaint action was triggered
+	@QtCore.pyqtSignature("")
+	def on_actionDebugSwitchScrollbars_triggered(self):
+		self.pictureFrame.enableHorizontalScrollBar(
+				not self.pictureFrame.horizontalScrollBarEnabled
+			)
+		self.pictureFrame.enableVerticalScrollBar(
+				not self.pictureFrame.verticalScrollBarEnabled
+			)
+		return
 
 	# File handling
 	
@@ -180,17 +194,63 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			fileNames = dialog.selectedFiles()
 			fileName = fileNames[0]
 			# Open the file
-			self.__beginOpenFile(fileName)
+			self.openFile(fileName)
 			return True
 		
 		return False
-		
-	# Opens the specified file
-	def __beginOpenFile(self, filepath):
-		"""Opens the specified file"""
-		print("Emitting openFile signal")
-		self.emit(QtCore.SIGNAL("openFile(string)"), filepath)
+	
+	# Notifies the system that the loading of a file has started
+	def __onOpenFileStarted(self, filepath):
+		"""Notifies the system that the loading of a file has started"""
+		# Emit signal
+		self.emit(QtCore.SIGNAL("openFileStarted(string)"), filepath)
 		return
+	
+	# Notifies the system that the loading of a file has finished
+	def __onOpenFileFinished(self, filepath, successful = True):
+		"""Notifies the system that the loading of a file has finished"""
+		# Emit signal
+		self.emit(QtCore.SIGNAL("openFileFinished(string, bool)"), filepath, successful)
+		# Display image
+		self.pictureFrame.takeImage(self.qimage)
+		return
+	
+	# Opens the specified file
+	def openFile(self, filepath):
+		"""Opens the specified file"""
+		# Open the file
+		self.__openFileSync(filepath)
+		return
+		
+	# Opens a file synchronously
+	def __openFileSync(self, filepath):
+		"""
+		Synchronously opens the file.
+		The function will block until the image is loaded.
+		"""
+
+		# Notify
+		print("Synchronously loading image: " + filepath)
+		self.__onOpenFileStarted(filepath)
+		
+		# Load image using PIL
+		pilimage = self.imageHelper.loadImageFromFile(filepath)
+		if not pilimage:
+			self.__onOpenFileFinished(filepath, False)
+			return False
+		self.pilimage = pilimage
+		
+		# Convert image to Qt QImage
+		qimage = self.imageHelper.convertPILImageToQtImage(pilimage)
+		if not qimage:
+			self.__onOpenFileFinished(filepath, False)
+			return False
+		self.qimage = qimage
+		
+		# Return
+		print("Done loading image")
+		self.__onOpenFileFinished(filepath, True)
+		return True
 
 	# General event handling
 

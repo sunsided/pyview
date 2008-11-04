@@ -7,19 +7,20 @@ Helper functions for image handling
 
 import sys
 import Image
+from PyQt4 import QtGui, QtCore
 
 class ImageHelper():
 		
 	# Loads an image from a file and returns a
 	# PIL Image
-	def loadImageFromFile(filepath):
+	def loadImageFromFile(self, filepath):
 		"""Loads an image from a file and returns a PIL image"""
-		image = Image.open(filepath)
+		image = Image.open(str(filepath))
 		return image
 		
 	# Converts a PIL image to a Qt image
 	# Kudos to: http://mail.python.org/pipermail/image-sig/2004-September/002908.html
-	def convertPILImageToQtImage(pilImage, encoder="jpeg", mode="RGB"):
+	def convertPILImageToQtImage(self, pilImage, encoder="jpeg", mode="RGB"):
 		"""
 		Converts a PIL image to a Qt image.
 		Optional parameters "encoder" and "mode" determine which method will
@@ -32,9 +33,8 @@ class ImageHelper():
 		if( not PILstring ): return None
 		
 		# Convert the string to a QImage
-		imageSize = QSize( pilImage.size[0], pilImage.size[1] )
-		image = QImage()
-		image.loadFromData(QByteArray(PILstring))
+		image = QtGui.QImage()
+		image.loadFromData(QtCore.QByteArray(PILstring))
 		
 		# Return the image
 		return image

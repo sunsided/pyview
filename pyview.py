@@ -9,7 +9,7 @@ from PyQt4 import QtGui, QtCore
 from gui.MainWindow import MainWindow
 from CommandLine import CommandLine
 from FolderHelper import FolderHelper
-
+from ImageHelper import ImageHelper
 	
 # Translates a string
 def tr(string):
@@ -37,15 +37,22 @@ def main():
 	folderHelper.setLastOpenedFile(options.initialFile)
 	startDir = folderHelper.getFileDialogInitialDirectory()
 
+	# Create image helper class
+	imageHelper = ImageHelper()
+
 	# Get and configure App object
 	app = QtGui.QApplication(sys.argv)
 	#QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("Cleanlooks"))
 
 	# Create and set window
-	window = MainWindow()
+	window = MainWindow(imageHelper)
 	window.setFileDialogDirectory(startDir)
 	window.centerWindow()
 	window.show()
+	
+	# Load initial file
+	if options.initialFile:
+		window.openFile(options.initialFile)
 	
 	# Start the application
 	return app.exec_()

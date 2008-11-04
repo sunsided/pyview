@@ -38,6 +38,7 @@
      <string>&amp;Debug</string>
     </property>
     <addaction name="actionDebugRepaint" />
+    <addaction name="actionDebugSwitchScrollbars" />
    </widget>
    <addaction name="menu_File" />
    <addaction name="menu_Debug" />
@@ -59,7 +60,7 @@
     <string>Force &amp;repaint</string>
    </property>
    <property name="shortcut" >
-    <string>F5</string>
+    <string>Ctrl+D, R</string>
    </property>
   </action>
   <action name="actionFileOpen" >
@@ -68,6 +69,14 @@
    </property>
    <property name="shortcut" >
     <string comment="Shows the &quot;Open File&quot; dialog" >O</string>
+   </property>
+  </action>
+  <action name="actionDebugSwitchScrollbars" >
+   <property name="text" >
+    <string>Switch Scrollbars</string>
+   </property>
+   <property name="shortcut" >
+    <string>Ctrl+D, S</string>
    </property>
   </action>
  </widget>
