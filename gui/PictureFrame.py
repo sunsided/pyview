@@ -274,11 +274,6 @@ class PictureFrame(QtGui.QFrame):
 			color = QtGui.QColor(self.bgColor)
 			brush = QtGui.QBrush(color)
 			painter.fillRect(viewport, brush)
-
-		
-		color = QtGui.QColor(self.bgColor)
-		brush = QtGui.QBrush(color)
-		painter.fillRect(self.rect(), brush)
 					
 		# Paint
 		if self.image:
