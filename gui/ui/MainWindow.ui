@@ -29,35 +29,45 @@
     <property name="title" >
      <string>&amp;File</string>
     </property>
-    <addaction name="action_Quit" />
+    <addaction name="actionFileOpen" />
+    <addaction name="separator" />
+    <addaction name="actionFileQuit" />
    </widget>
    <widget class="QMenu" name="menu_Debug" >
     <property name="title" >
      <string>&amp;Debug</string>
     </property>
-    <addaction name="action_Repaint" />
+    <addaction name="actionDebugRepaint" />
    </widget>
    <addaction name="menu_File" />
    <addaction name="menu_Debug" />
   </widget>
   <widget class="QStatusBar" name="statusbar" />
-  <action name="action_Quit" >
+  <action name="actionFileQuit" >
    <property name="text" >
     <string>&amp;Quit</string>
    </property>
    <property name="shortcut" >
-    <string comment="Closes the application" >Ctrl+Q</string>
+    <string comment="Closes the application" >Esc</string>
    </property>
    <property name="shortcutContext" >
     <enum>Qt::ApplicationShortcut</enum>
    </property>
   </action>
-  <action name="action_Repaint" >
+  <action name="actionDebugRepaint" >
    <property name="text" >
     <string>Force &amp;repaint</string>
    </property>
    <property name="shortcut" >
     <string>F5</string>
+   </property>
+  </action>
+  <action name="actionFileOpen" >
+   <property name="text" >
+    <string>Open ...</string>
+   </property>
+   <property name="shortcut" >
+    <string comment="Shows the &quot;Open File&quot; dialog" >O</string>
    </property>
   </action>
  </widget>

@@ -1,6 +1,4 @@
-#!/env/python
 # -*- coding:utf-8 -*-
-
 # pyview
 # Main Window GUI
 """
@@ -25,6 +23,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		print("Initializing main window")
 		QtGui.QMainWindow.__init__(self)
 		self.setupUi(self)
+		self.setupKeyboardHooks()
 
 		# Set picture frame
 		self.pictureFrame = PictureFrame(self)
@@ -33,6 +32,29 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 		# Set options
 		self.setAskOnExit(False)
+		self.setFileDialogDirectory(None)
+		return
+
+	# Keyboard hooks
+	
+	# Initialize keyboard shortcuts
+	def setupKeyboardHooks(self):
+		"""Initializes the keyboard shortcuts"""
+		print("Initializing keyboard shortcuts")
+		
+		# Set secondary "quit" shortcut
+		shortcut = QtGui.QShortcut(
+			QtGui.QKeySequence( self.tr("Ctrl+Q", "File|Quit")), 
+			self
+			)
+		self.connect(shortcut, QtCore.SIGNAL("activated()"), self.on_actionFileQuit_triggered)
+		
+		# Set secondary "open" shortcut
+		shortcut = QtGui.QShortcut(
+			QtGui.QKeySequence( self.tr("Ctrl+O", "File|Open")), 
+			self
+			)
+		self.connect(shortcut, QtCore.SIGNAL("activated()"), self.on_actionFileOpen_triggered)
 		return
 
 	# Options
@@ -50,6 +72,12 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 				)
 		self.pictureFrame.setBackgroundColor( color )
 		return
+		
+	# Sets the initial directory for file dialogs
+	def setFileDialogDirectory(self, directory):
+		"""Sets the initial directory for file dialogs"""
+		self.fileDialogDirectory = directory
+		return
 
 	# Sets whether a dialog box shall be shown when the
 	# window is about to close
@@ -61,6 +89,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		"""
 		self.AskOnExit = enabled
 		return
+
+	# Convenience functions
 
 	# Center the window on the screen
 	def centerWindow(self):
@@ -81,12 +111,88 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.move(x, y)
 		return
 
-	# Quit button was clicked
+	# Scrollbars
+	
+	# Checks for the right scrollbar
+	def isVerticalScrollbarNeeded(self):
+		"""
+		Determines whether the vertical (right) scrollbar is currently
+		needed or not.
+		"""
+		# TODO: Implement
+		return False
+	
+	# Checks for the bottom scrollbar
+	def isHorizontalScrollbarNeeded(self):
+		"""
+		Determines whether the horizontal (bottom) scrollbar is currently
+		needed or not.
+		"""
+		# TODO: Implement
+		return False
+
+	# Menu handling
+
+	# File|Open was selected
 	@QtCore.pyqtSignature("")
-	def on_action_Quit_triggered(self):
-		print("Closing main window.")
+	def on_actionFileOpen_triggered(self):
+		self.openFileWithDialog()
+		return
+
+	# File|Close was clicked
+	@QtCore.pyqtSignature("")
+	def on_actionFileQuit_triggered(self):
 		self.close()
 		return
+		
+	# Repaint action was triggered
+	@QtCore.pyqtSignature("")
+	def on_actionDebugRepaint_triggered(self):
+		self.pictureFrame.forceRepaint()
+		return
+
+	# File handling
+	
+	# Shows the file open dialog and eventually opens the file
+	def openFileWithDialog(self):
+		"""
+		Shows the "File Open" dialog and eventually opens the file.
+		Returns True if the user clicked "OK" and False otherwise.
+		"""
+				
+		# Define file filters
+		# TODO: Extend this list to every supported type
+		filters = QtCore.QStringList()
+		filters << self.tr("Pictures", "File dialog") + " (*.jpg *.gif *.png *.xpm)"
+		filters << self.tr("All files", "File dialog") + " (*)"
+		
+		# Create the dialog
+		dialog = QtGui.QFileDialog(self)
+		dialog.setFileMode(QtGui.QFileDialog.ExistingFile)
+		dialog.setViewMode(QtGui.QFileDialog.Detail)
+		dialog.setFilters(filters)
+		if self.fileDialogDirectory != None:
+			dialog.setDirectory(self.fileDialogDirectory)
+		
+		# Show the dialog
+		if( dialog.exec_() ):
+			# Get the filename
+			fileNames = dialog.selectedFiles()
+			fileName = fileNames[0]
+			# Open the file
+			self.__beginOpenFile(fileName)
+			return True
+		
+		return False
+		
+	# Opens the specified file
+	def __beginOpenFile(self, filepath):
+		"""Opens the specified file"""
+		print("Emitting openFile signal")
+		self.emit(QtCore.SIGNAL("openFile(string)"), filepath)
+		return
+
+	# General event handling
 
 	# Overrides the default behavior for the window close event
 	def closeEvent(self, event):
@@ -107,34 +213,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			event.ignore()
 		return
 
-	# Repaint action was triggered
-	@QtCore.pyqtSignature("")
-	def on_action_Repaint_triggered(self):
-		print("Repaint action triggered")
-		self.pictureFrame.forceRepaint()
-		return
-
-	# Checks for the right scrollbar
-	def isVerticalScrollbarNeeded(self):
-		"""
-		Determines whether the vertical (right) scrollbar is currently
-		needed or not.
-		"""
-		# TODO: Implement
-		return False
-	
-	# Checks for the bottom scrollbar
-	def isHorizontalScrollbarNeeded(self):
-		"""
-		Determines whether the horizontal (bottom) scrollbar is currently
-		needed or not.
-		"""
-		# TODO: Implement
-		return False
-
 	# Handles the resize event
 	def resizeEvent(self, event):
-		print("MainWindow resized")
 		# TODO: Disable picture frame update	
 		# TODO: Rescale image and repaint frame, if necessary
 		# TODO: Enable picture frame update

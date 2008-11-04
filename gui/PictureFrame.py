@@ -93,8 +93,6 @@ class PictureFrame(QtGui.QFrame):
 	# Calculates the viewport size
 	def calculateViewport(self):
 		"""Calculates the viewport size"""
-		print("Calculating viewport")
-
 		# Get new dimensions
 		height = self.height()
 		if self.horizontalScrollBarEnabled:
@@ -112,14 +110,12 @@ class PictureFrame(QtGui.QFrame):
 
 	# Called when the frame got resized
 	def resizeEvent(self, event):
-		print("PictureFrame resized")
 		self.updateScrollBars()
 		self.calculateViewport()
 		return
 
 	# Control needs to paint itself
 	def paintEvent(self, event):
-		print("PictureFrame paint event triggered.")
 		# Obtain painter
 		painter = QtGui.QPainter(self)
 
@@ -144,6 +140,7 @@ class PictureFrame(QtGui.QFrame):
 	def forceRepaint(self):
 		"""Forces a repaint of the PictureFrame"""
 		# Force repaint
+		print("PictureFrame repaint forced")
 		self.repaint(self.rect())
 		return
 
