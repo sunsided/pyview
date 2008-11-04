@@ -48,10 +48,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.pictureFrame.setBackgroundRole(
 				QtGui.QPalette.Window
 				)
-		self.pictureFrame.palette().setColor(
-				QtGui.QPalette.Background,
-				QtGui.QColor(color)
-				)
+		self.pictureFrame.setBackgroundColor( color )
 		return
 
 	# Sets whether a dialog box shall be shown when the
@@ -146,8 +143,12 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 # Testing
 
 if __name__ == "__main__":
+	# Init app and get style
 	app = QtGui.QApplication(sys.argv)
+	#QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("Cleanlooks"))
+	# Create and set window
 	window = MainWindow()
 	window.centerWindow()
 	window.show()
+	# Loop
 	sys.exit(app.exec_())
