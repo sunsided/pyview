@@ -39,22 +39,22 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		return
 
 	# Keyboard hooks
-	
+
 	# Initialize keyboard shortcuts
 	def setupKeyboardHooks(self):
 		"""Initializes the keyboard shortcuts"""
 		print("Initializing keyboard shortcuts")
-		
+
 		# Set secondary "quit" shortcut
 		shortcut = QtGui.QShortcut(
-			QtGui.QKeySequence( self.tr("Ctrl+Q", "File|Quit")), 
+			QtGui.QKeySequence( self.tr("Ctrl+Q", "File|Quit")),
 			self
 			)
 		self.connect(shortcut, QtCore.SIGNAL("activated()"), self.on_actionFileQuit_triggered)
-		
+
 		# Set secondary "open" shortcut
 		shortcut = QtGui.QShortcut(
-			QtGui.QKeySequence( self.tr("Ctrl+O", "File|Open")), 
+			QtGui.QKeySequence( self.tr("Ctrl+O", "File|Open")),
 			self
 			)
 		self.connect(shortcut, QtCore.SIGNAL("activated()"), self.on_actionFileOpen_triggered)
@@ -75,7 +75,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 				)
 		self.pictureFrame.setBackgroundColor( color )
 		return
-		
+
 	# Sets the initial directory for file dialogs
 	def setFileDialogDirectory(self, directory):
 		"""Sets the initial directory for file dialogs"""
@@ -115,7 +115,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		return
 
 	# Scrollbars
-	
+
 	# Checks for the right scrollbar
 	def isVerticalScrollbarNeeded(self):
 		"""
@@ -124,7 +124,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		"""
 		# TODO: Implement
 		return False
-	
+
 	# Checks for the bottom scrollbar
 	def isHorizontalScrollbarNeeded(self):
 		"""
@@ -147,7 +147,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	def on_actionFileQuit_triggered(self):
 		self.close()
 		return
-		
+
 	# Repaint action was triggered
 	@QtCore.pyqtSignature("")
 	def on_actionDebugRepaint_triggered(self):
@@ -155,20 +155,20 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		return
 
 	# File handling
-	
+
 	# Shows the file open dialog and eventually opens the file
 	def openFileWithDialog(self):
 		"""
 		Shows the "File Open" dialog and eventually opens the file.
 		Returns True if the user clicked "OK" and False otherwise.
 		"""
-				
+
 		# Define file filters
 		# TODO: Extend this list to every supported type
 		filters = QtCore.QStringList()
 		filters << self.tr("Pictures", "File dialog") + " (*.jpg *.gif *.png *.xpm)"
 		filters << self.tr("All files", "File dialog") + " (*)"
-		
+
 		# Create the dialog
 		dialog = QtGui.QFileDialog(self)
 		dialog.setFileMode(QtGui.QFileDialog.ExistingFile)
@@ -176,7 +176,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		dialog.setFilters(filters)
 		if self.fileDialogDirectory != None:
 			dialog.setDirectory(self.fileDialogDirectory)
-		
+
 		# Show the dialog
 		if( dialog.exec_() ):
 			# Get the filename
@@ -185,16 +185,16 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			# Open the file
 			self.openFile(fileName)
 			return True
-		
+
 		return False
-	
+
 	# Notifies the system that the loading of a file has started
 	def __onOpenFileStarted(self, filepath):
 		"""Notifies the system that the loading of a file has started"""
 		# Emit signal
 		self.emit(QtCore.SIGNAL("openFileStarted(string)"), filepath)
 		return
-	
+
 	# Notifies the system that the loading of a file has finished
 	def __onOpenFileFinished(self, filepath, successful = True):
 		"""Notifies the system that the loading of a file has finished"""
@@ -203,14 +203,14 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		# Display image
 		self.pictureFrame.takeImage(self.qimage)
 		return
-	
+
 	# Opens the specified file
 	def openFile(self, filepath):
 		"""Opens the specified file"""
 		# Open the file
 		self.__openFileSync(filepath)
 		return
-		
+
 	# Opens a file synchronously
 	def __openFileSync(self, filepath):
 		"""
@@ -221,21 +221,22 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		# Notify
 		print("Synchronously loading image: " + filepath)
 		self.__onOpenFileStarted(filepath)
-		
+
 		# Load image using PIL
-		pilimage = self.imageHelper.loadImageFromFile(filepath)
+		pilimage = self.imageHelper.createImage()
+		pilimage.loadImageFromFile(filepath)
 		if not pilimage:
 			self.__onOpenFileFinished(filepath, False)
 			return False
-		self.pilimage = pilimage
-		
+		self.image = pilimage
+
 		# Convert image to Qt QImage
-		qimage = self.imageHelper.convertPILImageToQtImage(pilimage)
+		qimage = pilimage.convertToQtImage()
 		if not qimage:
 			self.__onOpenFileFinished(filepath, False)
 			return False
 		self.qimage = qimage
-		
+
 		# Return
 		print("Done loading image")
 		self.__onOpenFileFinished(filepath, True)
@@ -250,7 +251,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			return
 
 		# Ask
-		reply = QtGui.QMessageBox.question(self, 
+		reply = QtGui.QMessageBox.question(self,
 				self.tr("Closing ..."),
 				self.tr("Are you sure you want to quit?"),
 				QtGui.QMessageBox.Yes,
@@ -264,7 +265,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 	# Handles the resize event
 	def resizeEvent(self, event):
-		# TODO: Disable picture frame update	
+		# TODO: Disable picture frame update
 		# TODO: Rescale image and repaint frame, if necessary
 		# TODO: Enable picture frame update
 		return

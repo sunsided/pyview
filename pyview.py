@@ -10,7 +10,7 @@ from gui.MainWindow import MainWindow
 from CommandLine import CommandLine
 from FolderHelper import FolderHelper
 from ImageHelper import ImageHelper
-	
+
 # Translates a string
 def tr(string):
 	"""
@@ -28,7 +28,7 @@ class Version:
 # Main Entry point
 def main():
 
-	# TODO: Build command line parser
+	# Build command line parser
 	cmdLine = CommandLine(Version())
 	options = cmdLine.getOptions()
 
@@ -49,18 +49,18 @@ def main():
 	window.setFileDialogDirectory(startDir)
 	window.centerWindow()
 	window.show()
-	
+
 	# Load initial file
 	if options.initialFile:
 		window.openFile(options.initialFile)
-	
+
 	# Start the application
 	return app.exec_()
 
 # System entry point
 
 if __name__ == "__main__":
-	
+
 	# Spank me
 	sys.exit(main())
 
