@@ -24,6 +24,10 @@ class PictureFrame(QtGui.QFrame):
 		
 		# Save owner
 		self.owner = parent
+		
+		# Disable background
+		self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent)
+		self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
 				
 		return
 		
@@ -31,6 +35,11 @@ class PictureFrame(QtGui.QFrame):
 	def forceRepaint(self):
 		"""Forces a repaint"""
 		self.repaint(self.rect())
+		return
+
+	# Control was resized
+	def resizeEvent(self, event):
+		self.owner.resizeHook(self)
 		return
 
 	# Control needs to paint itself

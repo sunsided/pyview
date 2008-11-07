@@ -20,22 +20,25 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	# Initializes the class
 	def __init__(self, imageHelper):
 		# Initialize UI
-		print("Initializing main window")
 		QtGui.QMainWindow.__init__(self)
 		
 		# Set classes
 		self.imageHelper = imageHelper
 		self.image = None
 		self.qimage = None
-		
+		self.frameRegion = None
+				
 		# Setup UI
 		self.setupUi(self)
 		self.setupKeyboardHooks()
 		
 		# Create the picture frame
 		pictureFrame = PictureFrame(self)
-		pictureFrame.setVisible(True)
+		pictureFrame.setVisible(False)
 		self.pictureFrame = pictureFrame
+		
+		# Create the region
+		self.createFrameRegion()
 		
 		# Scrollbars	
 		scrollArea = QtGui.QScrollArea(self)
@@ -48,11 +51,13 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 		# Finally, add the PictureFrame to the Scrollarea		
 		scrollArea.setWidget(pictureFrame)
+		pictureFrame.setVisible(True)
 
 		# Set options
 		self.setAskOnExit(False)
 		self.setFileDialogDirectory(None)
 		self.setImageAreaBackgroundColor("#909090")
+		
 		return
 
 	# Enables or disables the horizontal scrollbar
@@ -76,7 +81,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	# Initialize keyboard shortcuts
 	def setupKeyboardHooks(self):
 		"""Initializes the keyboard shortcuts"""
-		print("Initializing keyboard shortcuts")
 
 		# Set secondary "quit" shortcut
 		shortcut = QtGui.QShortcut(
@@ -135,7 +139,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	# Center the window on the screen
 	def centerWindow(self):
 		"""Centers the window on the screen"""
-		print("Centering window on screen")
 		# Get desktop size
 		desktop = QtGui.QApplication.desktop()
 		screenWidth = desktop.width()
@@ -293,22 +296,41 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			event.ignore()
 		return
 	
+	def createFrameRegion(self):
+		"""Creates the region for the current picture frame"""
+		self.frameRegion = QtGui.QRegion( self.pictureFrame.rect() )
+		return
+	
 	# Resize event
 	def resizeEvent(self, event):
+		self.createFrameRegion()
 		self.pictureFrame.forceRepaint()
+		return
+		
+	def resizeHook(self, frame):
+		self.createFrameRegion()
 		return
 	
 	# Painting hook
 	def paintHook(self, frame, painter):
 		"""This function will be called from within the picture frame"""
 		
+		# Get the rectangles
+		targetRect = self.qimage.rect()
+		sourceRect = self.qimage.rect()
+
+		targetRegion = QtGui.QRegion(targetRect)
+		clipRegion = self.frameRegion.xored( targetRegion )
+		
 		# Fill the background	
 		brush = QtGui.QBrush(self.bgColor)
+		painter.setClipRegion( clipRegion )
 		painter.fillRect( frame.rect(), brush )
 			
 		# Draw the image
 		if self.qimage:
-			painter.drawImage(self.qimage.rect(), self.qimage, self.qimage.rect() )
+			painter.setClipRegion( targetRegion )
+			painter.drawImage(targetRect, self.qimage, sourceRect )
 		
 		return
 

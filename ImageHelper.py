@@ -20,7 +20,7 @@ class ImageHelper():
 class ImageObject():
 
 	def __init__(self):
-		self.image = None
+		self.image = None	
 		return
 
 	# Loads an image from a file
