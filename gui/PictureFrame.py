@@ -26,6 +26,12 @@ class PictureFrame(QtGui.QFrame):
 		self.owner = parent
 				
 		return
+		
+	# Forces a repaint
+	def forceRepaint(self):
+		"""Forces a repaint"""
+		self.repaint(self.rect())
+		return
 
 	# Control needs to paint itself
 	def paintEvent(self, event):

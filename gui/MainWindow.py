@@ -31,11 +31,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		# Setup UI
 		self.setupUi(self)
 		self.setupKeyboardHooks()
-
-		# Paint
-		self.calculateClientArea()
-		self.setImageAreaBackgroundColor("#909090")
-		self.statusBar().setVisible(True)
 		
 		# Create the picture frame
 		pictureFrame = PictureFrame(self)
@@ -53,11 +48,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 		# Finally, add the PictureFrame to the Scrollarea		
 		scrollArea.setWidget(pictureFrame)
-		
 
 		# Set options
 		self.setAskOnExit(False)
 		self.setFileDialogDirectory(None)
+		self.setImageAreaBackgroundColor("#909090")
 		return
 
 	# Enables or disables the horizontal scrollbar
@@ -114,7 +109,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		"""
 		
 		self.bgColor = QtGui.QColor(color)
-		self.repaint(self.clientArea)
+		self.pictureFrame.forceRepaint()
 				
 		return
 
@@ -226,7 +221,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		width, height = self.image.getSize()
 		self.statusBar().showMessage(str(width) + "px x " + str(height) + "px")
 		# Display image
-		self.repaint(self.clientArea)
+		self.pictureFrame.forceRepaint()
 		return
 
 	# Opens the specified file
@@ -297,46 +292,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		else:
 			event.ignore()
 		return
-
-	# Calculates the client area
-	def calculateClientArea(self):
-		"""Calculates the client area"""
-
-		# Calculate the client area size
-		clientArea = QtCore.QRect(self.rect())
-		clientArea.setTop( clientArea.top() + self.menuBar().height() )
-		
-		subtract = self.menuBar().height()
-		if self.statusBar().isVisible():
-			subtract = self.statusBar().height()
-		clientArea.setHeight( clientArea.height() - subtract )
-		
-		self.clientArea = clientArea
-		
-		# Create a reagion
-		self.clientAreaRegion = QtGui.QRegion(clientArea)
-		
-		return
-
-	def updateImage(self):
-		self.calculateClientArea()
-		return
-
-	# Handles the resize event
-	def resizeEvent(self, event):
-		# TODO: Disable picture frame update
-		# TODO: Rescale image and repaint frame, if necessary
-		# TODO: Enable picture frame update
-		
-		self.updateImage()
-		
-		return
 	
-	# Gets called when a child is added or removed from the GUI
-	def childEvent(self, event):
-		if event.added() or event.removed():
-			self.updateImage()
-		return;
+	# Resize event
+	def resizeEvent(self, event):
+		self.pictureFrame.forceRepaint()
+		return
 	
 	# Painting hook
 	def paintHook(self, frame, painter):
