@@ -37,15 +37,44 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.setImageAreaBackgroundColor("#909090")
 		self.statusBar().setVisible(True)
 		
-		# Scrollbars
+		# Create the picture frame
 		pictureFrame = PictureFrame(self)
-		self.setCentralWidget(pictureFrame)
+		pictureFrame.setVisible(True)
 		self.pictureFrame = pictureFrame
+		
+		# Scrollbars	
+		scrollArea = QtGui.QScrollArea(self)
+		self.scrollArea = scrollArea;
+		scrollArea.setBackgroundRole(QtGui.QPalette.Dark)
+		scrollArea.setWidgetResizable(True)
+		self.enableHorizontalScrollBar(True)
+		self.enableVerticalScrollBar(True)
+		self.setCentralWidget(scrollArea)
+
+		# Finally, add the PictureFrame to the Scrollarea		
+		scrollArea.setWidget(pictureFrame)
+		
 
 		# Set options
 		self.setAskOnExit(False)
 		self.setFileDialogDirectory(None)
 		return
+
+	# Enables or disables the horizontal scrollbar
+	def enableHorizontalScrollBar(self, enabled):
+		"""Enables or disables the horizontal scrollbar"""
+		policy = QtCore.Qt.ScrollBarAlwaysOn
+		if not enabled:
+			policy = QtCore.Qt.ScrollBarAlwaysOff
+		self.scrollArea.setHorizontalScrollBarPolicy(policy)
+
+	# Enables or disables the vertica scrollbar
+	def enableVerticalScrollBar(self, enabled):
+		"""Enables or disables the vertical scrollbar"""
+		policy = QtCore.Qt.ScrollBarAlwaysOn
+		if not enabled:
+			policy = QtCore.Qt.ScrollBarAlwaysOff
+		self.scrollArea.setVerticalScrollBarPolicy(policy)
 
 	# Keyboard hooks
 

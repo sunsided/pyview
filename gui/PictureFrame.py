@@ -20,8 +20,11 @@ class PictureFrame(QtGui.QFrame):
 	# Initializes the class
 	def __init__(self, parent):
 		# Initialize
-		QtGui.QFrame.__init__(self, parent)	
+		QtGui.QFrame.__init__(self)	
+		
+		# Save owner
 		self.owner = parent
+				
 		return
 
 	# Control needs to paint itself
