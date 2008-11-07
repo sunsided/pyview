@@ -22,16 +22,25 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		# Initialize UI
 		print("Initializing main window")
 		QtGui.QMainWindow.__init__(self)
+		
+		# Set classes
+		self.imageHelper = imageHelper
+		self.image = None
+		self.qimage = None
+		
+		# Setup UI
 		self.setupUi(self)
 		self.setupKeyboardHooks()
 
-		# Set classes
-		self.imageHelper = imageHelper
-
-		# Set picture frame
-		self.pictureFrame = PictureFrame(self)
-		self.setCentralWidget(self.pictureFrame)
+		# Paint
+		self.calculateClientArea()
 		self.setImageAreaBackgroundColor("#909090")
+		self.statusBar().setVisible(True)
+		
+		# Scrollbars
+		scrollarea = PictureFrame(self)
+		self.setCentralWidget(scrollarea)
+		self.scrollarea = scrollarea
 
 		# Set options
 		self.setAskOnExit(False)
@@ -48,6 +57,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		# Set secondary "quit" shortcut
 		shortcut = QtGui.QShortcut(
 			QtGui.QKeySequence( self.tr("Ctrl+Q", "File|Quit")),
+			self
+			)
+		self.connect(shortcut, QtCore.SIGNAL("activated()"), self.on_actionFileQuit_triggered)
+		shortcut = QtGui.QShortcut(
+			QtGui.QKeySequence( self.tr("Q", "File|Quit")),
 			self
 			)
 		self.connect(shortcut, QtCore.SIGNAL("activated()"), self.on_actionFileQuit_triggered)
@@ -69,11 +83,10 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		The color is a string with a hex RGB color code,
 		i.e. "#FF0000" for red
 		"""
-		self.pictureFrame.setAutoFillBackground(True)
-		self.pictureFrame.setBackgroundRole(
-				QtGui.QPalette.Window
-				)
-		self.pictureFrame.setBackgroundColor( color )
+		
+		self.bgColor = QtGui.QColor(color)
+		self.repaint(self.clientArea)
+				
 		return
 
 	# Sets the initial directory for file dialogs
@@ -200,8 +213,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		"""Notifies the system that the loading of a file has finished"""
 		# Emit signal
 		self.emit(QtCore.SIGNAL("openFileFinished(string, bool)"), filepath, successful)
+		# Display statistics
+		width, height = self.image.getSize()
+		self.statusBar().showMessage(str(width) + "px x " + str(height) + "px")
 		# Display image
-		self.pictureFrame.takeImage(self.qimage)
+		self.repaint(self.clientArea)
 		return
 
 	# Opens the specified file
@@ -231,16 +247,26 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.image = pilimage
 
 		# Convert image to Qt QImage
-		qimage = pilimage.convertToQtImage()
-		if not qimage:
+		if not self.updateQImage():
+			self.qimage = None
 			self.__onOpenFileFinished(filepath, False)
 			return False
-		self.qimage = qimage
 
 		# Return
 		print("Done loading image")
 		self.__onOpenFileFinished(filepath, True)
 		return True
+
+	# Updates the local QImage copy
+	def updateQImage(self):
+		"""Updates the QImage copy"""
+		if not self.image:
+			self.qimage = None
+			return None
+			
+		qimage = self.image.convertToQtImage()
+		self.qimage = qimage
+		return qimage
 
 	# General event handling
 
@@ -263,12 +289,55 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			event.ignore()
 		return
 
+	# Calculates the client area
+	def calculateClientArea(self):
+		"""Calculates the client area"""
+
+		# Calculate the client area size
+		clientArea = QtCore.QRect(self.rect())
+		clientArea.setTop( clientArea.top() + self.menuBar().height() )
+		
+		subtract = self.menuBar().height()
+		if self.statusBar().isVisible():
+			subtract = self.statusBar().height()
+		clientArea.setHeight( clientArea.height() - subtract )
+		
+		self.clientArea = clientArea
+		
+		# Create a reagion
+		self.clientAreaRegion = QtGui.QRegion(clientArea)
+		
+		return
+
+	def updateImage(self):
+		self.calculateClientArea()
+		return
+
 	# Handles the resize event
 	def resizeEvent(self, event):
 		# TODO: Disable picture frame update
 		# TODO: Rescale image and repaint frame, if necessary
 		# TODO: Enable picture frame update
+		
+		self.updateImage()
+		
 		return
+	
+	# Gets called when a child is added or removed from the GUI
+	def childEvent(self, event):
+		if event.added() or event.removed():
+			self.updateImage()
+		return;
+	
+	# Painting hook
+	def paintHook(self, painter):
+		"""This function will be called from within the picture frame"""
+			
+		if self.qimage:
+			painter.drawImage(self.qimage.rect(), self.qimage, self.qimage.rect() )
+		
+		return
+
 
 # Testing
 

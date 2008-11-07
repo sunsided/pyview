@@ -6,7 +6,7 @@ Helper functions for image handling
 """
 
 import sys
-import Image
+from PIL import Image
 from PyQt4 import QtGui, QtCore
 
 class ImageHelper():
@@ -46,7 +46,13 @@ class ImageObject():
 		# Convert the string to a QImage
 		qimage = QtGui.QImage()
 		qimage.loadFromData(QtCore.QByteArray(PILstring))
+			
+			
 
 		# Return the image
 		return qimage
-
+		
+	# Gets the image's dimensions
+	def getSize(self):
+		"""Gets the dimensions of the loaded image"""
+		return self.image.size
