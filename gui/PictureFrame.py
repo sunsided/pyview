@@ -31,7 +31,7 @@ class PictureFrame(QtGui.QFrame):
 		paint.begin(self)
 		
 		# Dispatch to owner
-		self.owner.paintHook(paint)
+		self.owner.paintHook(self, paint)
 		
 		paint.end()
 		return

@@ -38,9 +38,9 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.statusBar().setVisible(True)
 		
 		# Scrollbars
-		scrollarea = PictureFrame(self)
-		self.setCentralWidget(scrollarea)
-		self.scrollarea = scrollarea
+		pictureFrame = PictureFrame(self)
+		self.setCentralWidget(pictureFrame)
+		self.pictureFrame = pictureFrame
 
 		# Set options
 		self.setAskOnExit(False)
@@ -126,26 +126,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		# Set position
 		self.move(x, y)
 		return
-
-	# Scrollbars
-
-	# Checks for the right scrollbar
-	def isVerticalScrollbarNeeded(self):
-		"""
-		Determines whether the vertical (right) scrollbar is currently
-		needed or not.
-		"""
-		# TODO: Implement
-		return False
-
-	# Checks for the bottom scrollbar
-	def isHorizontalScrollbarNeeded(self):
-		"""
-		Determines whether the horizontal (bottom) scrollbar is currently
-		needed or not.
-		"""
-		# TODO: Implement
-		return False
 
 	# Menu handling
 
@@ -330,9 +310,14 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		return;
 	
 	# Painting hook
-	def paintHook(self, painter):
+	def paintHook(self, frame, painter):
 		"""This function will be called from within the picture frame"""
+		
+		# Fill the background	
+		brush = QtGui.QBrush(self.bgColor)
+		painter.fillRect( frame.rect(), brush )
 			
+		# Draw the image
 		if self.qimage:
 			painter.drawImage(self.qimage.rect(), self.qimage, self.qimage.rect() )
 		
