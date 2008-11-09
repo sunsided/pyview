@@ -23,6 +23,16 @@ class ImageObject():
 		self.image = None	
 		return
 
+	def pilimage(self):
+		"""Returns the image representation"""
+		return self.image
+		
+	def getsize(self):
+		"""
+		Returns the dimensions of the image as a tuple {width, height}
+		"""
+		return self.image.size
+
 	# Loads an image from a file
 	def loadImageFromFile(self, filepath):
 		"""Loads an image from a file and returns a PIL image"""

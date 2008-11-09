@@ -24,8 +24,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		
 		# Set classes
 		self.imageHelper = imageHelper
-		self.image = None
-		self.qimage = None
+		self.image = None			# The ImageHelper instance
+		self.qimage = None			# The Qt image copy
 		self.frameRegion = None
 				
 		# Setup UI
@@ -259,6 +259,9 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			self.__onOpenFileFinished(filepath, False)
 			return False
 
+		# Region set scrollbars
+		self.updateScrollbarSizeFromImage()
+
 		# Return
 		print("Done loading image")
 		self.__onOpenFileFinished(filepath, True)
@@ -300,15 +303,47 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		"""Creates the region for the current picture frame"""
 		self.frameRegion = QtGui.QRegion( self.pictureFrame.rect() )
 		return
+		
+	def calculateViewport(self):
+		"""Calculates the visible area of the image"""
+		viewport = self.pictureFrame.rect()
+		self.viewport = viewport
+		return
+	
+	def updateScrollbarSizeFromImage(self):
+		"""
+		Sets the max values of the scrollbars according to 
+		the image's size
+		"""
+		if not self.image:
+			return
+		
+		width, height = self.image.getsize()
+		
+		# hdjsh
+		#self.pictureFrame.setMinimumSize(400, 800)
+		
+		# Set height scrollbar
+		self.scrollArea.verticalScrollBar().setMinimum(0)
+		self.scrollArea.verticalScrollBar().setMaximum(height)
+		self.scrollArea.verticalScrollBar().setValue(50)
+		
+		# Set width scrollbar
+		self.scrollArea.horizontalScrollBar().setMinimum(0)
+		self.scrollArea.horizontalScrollBar().setMaximum(width)
+		
+		return
 	
 	# Resize event
 	def resizeEvent(self, event):
+		self.calculateViewport()
 		self.createFrameRegion()
 		self.pictureFrame.forceRepaint()
 		return
 		
 	def resizeHook(self, frame):
 		self.createFrameRegion()
+		self.calculateViewport()
 		return
 	
 	# Painting hook
