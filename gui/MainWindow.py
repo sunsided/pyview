@@ -5,7 +5,7 @@
 Main Window GUI for the pyview image viewer
 """
 
-import sys
+import sys, math
 from PyQt4 import QtGui, QtCore
 from ui.Ui_MainWindow import Ui_MainWindow
 from PictureFrame import PictureFrame
@@ -32,26 +32,46 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.setupUi(self)
 		self.setupKeyboardHooks()
 		
-		# Create the picture frame
-		pictureFrame = PictureFrame(self)
-		pictureFrame.setVisible(False)
-		self.pictureFrame = pictureFrame
+		# Weird hack ...
+		# First, a central widget
+		# That widget will get a grid layout layout
+		# That will hold the painting area, as well as the scrollbars
 		
-		# Create the region
+		# 1.) Create the central widget
+		central = QtGui.QWidget()
+		central.setBackgroundRole(QtGui.QPalette.Dark)
+		self.setCentralWidget(central)
+		
+		# 2.) Add the layout
+		layout = QtGui.QGridLayout()
+		layout.setMargin(0)			# Set a zero margin so it fills the frame
+		layout.setSpacing(0)		# -"- spacing for similar reasons
+		central.setLayout(layout)
+				
+		# 3.) Create the picture frame
+		self.pictureFrame = PictureFrame(self)
+		self.pictureFrame.setVisible(False)
+		
+		# 4.) Add the picture frame to the grid
+		layout.addWidget(self.pictureFrame, 0, 0)
+
+		# 5.) Create the scrollbars
+		self.vscroll = QtGui.QScrollBar(QtCore.Qt.Vertical)
+		self.vscroll.setPageStep(200)
+		layout.addWidget(self.vscroll, 0, 1)
+		self.hscroll = QtGui.QScrollBar(QtCore.Qt.Horizontal)
+		self.hscroll.setPageStep(200)
+		layout.addWidget(self.hscroll, 1, 0)
+		
+		# Create a region for the clipping operations
 		self.createFrameRegion()
 		
 		# Scrollbars	
-		scrollArea = QtGui.QScrollArea(self)
-		self.scrollArea = scrollArea;
-		scrollArea.setBackgroundRole(QtGui.QPalette.Dark)
-		scrollArea.setWidgetResizable(True)
 		self.enableHorizontalScrollBar(True)
 		self.enableVerticalScrollBar(True)
-		self.setCentralWidget(scrollArea)
 
 		# Finally, add the PictureFrame to the Scrollarea		
-		scrollArea.setWidget(pictureFrame)
-		pictureFrame.setVisible(True)
+		self.pictureFrame.setVisible(True)
 
 		# Set options
 		self.setAskOnExit(False)
@@ -63,18 +83,12 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	# Enables or disables the horizontal scrollbar
 	def enableHorizontalScrollBar(self, enabled):
 		"""Enables or disables the horizontal scrollbar"""
-		policy = QtCore.Qt.ScrollBarAlwaysOn
-		if not enabled:
-			policy = QtCore.Qt.ScrollBarAlwaysOff
-		self.scrollArea.setHorizontalScrollBarPolicy(policy)
+		self.hscroll.setVisible(enabled)
 
 	# Enables or disables the vertica scrollbar
 	def enableVerticalScrollBar(self, enabled):
 		"""Enables or disables the vertical scrollbar"""
-		policy = QtCore.Qt.ScrollBarAlwaysOn
-		if not enabled:
-			policy = QtCore.Qt.ScrollBarAlwaysOff
-		self.scrollArea.setVerticalScrollBarPolicy(policy)
+		self.vscroll.setVisible(enabled)
 
 	# Keyboard hooks
 
@@ -318,31 +332,47 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		if not self.image:
 			return
 		
-		width, height = self.image.getsize()
+		# Get the image size
+		imwidth, imheight = self.image.getsize()
 		
-		# hdjsh
-		#self.pictureFrame.setMinimumSize(400, 800)
+		# Calculate the possible sizes
+		# If either of these values is lte 0, the scrollbar
+		# may be hidden
+		height = imheight - self.viewport.height()
+		width = imwidth - self.viewport.width()
 		
 		# Set height scrollbar
-		self.scrollArea.verticalScrollBar().setMinimum(0)
-		self.scrollArea.verticalScrollBar().setMaximum(height)
-		self.scrollArea.verticalScrollBar().setValue(50)
+		if height > 0:
+			self.vscroll.setVisible(True)
+			self.vscroll.setMinimum(0)
+			self.vscroll.setMaximum(height)
+			self.vscroll.setPageStep(4*imheight/5)
+		else:
+			self.vscroll.setVisible(False)
 		
 		# Set width scrollbar
-		self.scrollArea.horizontalScrollBar().setMinimum(0)
-		self.scrollArea.horizontalScrollBar().setMaximum(width)
+		if width > 0:
+			self.hscroll.setVisible(True)
+			self.hscroll.setMinimum(0)
+			self.hscroll.setMaximum(width)
+			self.hscroll.setPageStep(4*imwidth/5)
+		else:
+			self.hscroll.setVisible(False)
 		
 		return
 	
 	# Resize event
 	def resizeEvent(self, event):
 		self.calculateViewport()
-		self.createFrameRegion()
-		self.pictureFrame.forceRepaint()
+		#self.createFrameRegion()
+		#self.pictureFrame.forceRepaint()
 		return
 		
 	def resizeHook(self, frame):
+		self.calculateViewport()
+		self.updateScrollbarSizeFromImage()
 		self.createFrameRegion()
+		self.updateScrollbarSizeFromImage()
 		self.calculateViewport()
 		return
 	
