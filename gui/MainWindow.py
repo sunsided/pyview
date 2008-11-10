@@ -27,6 +27,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.image = None			# The ImageHelper instance
 		self.qimage = None			# The Qt image copy
 		self.frameRegion = None
+		self.imheight = 0
+		self.imwidth = 0
 				
 		# Setup UI
 		self.setupUi(self)
@@ -62,6 +64,10 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.hscroll = QtGui.QScrollBar(QtCore.Qt.Horizontal)
 		self.hscroll.setPageStep(200)
 		layout.addWidget(self.hscroll, 1, 0)
+		
+		# 5.5) Connect the sliders
+		self.connect(self.vscroll, QtCore.SIGNAL("valueChanged(int)"), self.scrollBarSlided)
+		self.connect(self.hscroll, QtCore.SIGNAL("valueChanged(int)"), self.scrollBarSlided)
 		
 		# Create a region for the clipping operations
 		self.createFrameRegion()
@@ -266,6 +272,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			self.__onOpenFileFinished(filepath, False)
 			return False
 		self.image = pilimage
+		self.imwidth, self.imheight = pilimage.getsize()
 
 		# Convert image to Qt QImage
 		if not self.updateQImage():
@@ -318,10 +325,31 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.frameRegion = QtGui.QRegion( self.pictureFrame.rect() )
 		return
 		
+	# Scrollbar value has changed, so refresh the viewports
+	def scrollBarSlided(self, value):
+		self.calculateViewport()
+		self.pictureFrame.forceRepaint()
+		return
+		
 	def calculateViewport(self):
 		"""Calculates the visible area of the image"""
-		viewport = self.pictureFrame.rect()
-		self.viewport = viewport
+		
+		# Get the display frame size
+		sourceRect = self.pictureFrame.rect()
+		
+		# Offset the rectangle
+		leftOffset = self.hscroll.value()
+		topOffset = self.vscroll.value()		
+		sourceRect.adjust(leftOffset, topOffset, leftOffset, topOffset)
+		
+		# Now trim the viewport to the actual image boundaries
+		#if leftOffset == 0:
+		#	viewport.setWidth(self.imwidth)
+		#if topOffset == 0:
+		#	viewport.setHeight(self.imheight)
+		
+		# Set it
+		self.sourceRect = sourceRect
 		return
 	
 	def updateScrollbarSizeFromImage(self):
@@ -332,21 +360,18 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		if not self.image:
 			return
 		
-		# Get the image size
-		imwidth, imheight = self.image.getsize()
-		
 		# Calculate the possible sizes
 		# If either of these values is lte 0, the scrollbar
 		# may be hidden
-		height = imheight - self.viewport.height()
-		width = imwidth - self.viewport.width()
+		height = self.imheight - self.pictureFrame.height()
+		width = self.imwidth - self.pictureFrame.width()
 		
 		# Set height scrollbar
 		if height > 0:
 			self.vscroll.setVisible(True)
 			self.vscroll.setMinimum(0)
 			self.vscroll.setMaximum(height)
-			self.vscroll.setPageStep(4*imheight/5)
+			self.vscroll.setPageStep(4*self.imheight/5)
 		else:
 			self.vscroll.setVisible(False)
 		
@@ -355,7 +380,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			self.hscroll.setVisible(True)
 			self.hscroll.setMinimum(0)
 			self.hscroll.setMaximum(width)
-			self.hscroll.setPageStep(4*imwidth/5)
+			self.hscroll.setPageStep(4*self.imwidth/5)
 		else:
 			self.hscroll.setVisible(False)
 		
@@ -381,21 +406,23 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		"""This function will be called from within the picture frame"""
 		
 		# Get the rectangles
-		targetRect = self.qimage.rect()
-		sourceRect = self.qimage.rect()
+		targetRect = self.pictureFrame.rect()
+		sourceRect = self.sourceRect
 
-		targetRegion = QtGui.QRegion(targetRect)
-		clipRegion = self.frameRegion.xored( targetRegion )
+		#sourceRegion = QtGui.QRegion(sourceRect)
+		#pictureClipRegion = self.frameRegion.intersected( sourceRegion )
+		#backgroundClipRegion = self.frameRegion.xored( sourceRegion )
 		
 		# Fill the background	
-		brush = QtGui.QBrush(self.bgColor)
-		painter.setClipRegion( clipRegion )
-		painter.fillRect( frame.rect(), brush )
+		#brush = QtGui.QBrush(self.bgColor)
+		#painter.setClipRegion( backgroundClipRegion )
+		#painter.fillRect( frame.rect(), brush )
 			
 		# Draw the image
 		if self.qimage:
-			painter.setClipRegion( targetRegion )
+			#painter.setClipRegion( pictureClipRegion )
 			painter.drawImage(targetRect, self.qimage, sourceRect )
+			pass
 		
 		return
 
