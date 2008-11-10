@@ -75,6 +75,12 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 		# Finally, add the PictureFrame to the Scrollarea		
 		self.pictureFrame.setVisible(True)
+		
+		# Create statusbar widgets
+		self.positionLabel = QtGui.QLabel()
+		self.statusBar().addPermanentWidget(self.positionLabel)
+		self.colorLabel = QtGui.QLabel()
+		self.statusBar().addPermanentWidget(self.colorLabel)
 
 		# Set options
 		self.setAskOnExit(False)
@@ -419,6 +425,36 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.pictureFrame.forceRepaint()
 		return
 	
+	# Gets the color
+	def getColorRelative(self, x, y):
+		"""
+		Gets the color at the given coordinates.
+		x,y is relative to the source rect.
+		The result is a RGB tuple
+		"""
+		# Get position
+		x += self.sourceRect.left()
+		y += self.sourceRect.top()
+		# Sanity check
+		if x >= self.imwidth:
+			return None
+		if y >= self.imheight:
+			return None
+		return self.image.getPixel(x, y)
+		
+	# Gets the color
+	def getColorRelativeHex(self, x, y):
+		"""
+		Gets the color at the given coordinates.
+		x,y is relative to the source rect.
+		The result is a web (hex) color representation.
+		"""
+		color = self.getColorRelative(x, y)
+		if not color:
+			return None
+		value = "#%02X"%color[0]+"%02X"%color[1]+"%02X"%color[2]
+		return value
+	
 	# Painting hook
 	def paintHook(self, frame, painter):
 		"""This function will be called from within the picture frame"""
@@ -436,6 +472,19 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			painter.drawImage(self.targetRect, self.qimage, self.sourceRect )
 			pass
 		
+		return
+		
+	def mouseMoveHook(self, event):
+		self.positionLabel.setText( str(event.x()) + "x" + str(event.y()))
+		self.positionLabel.setVisible(True)
+		
+		# Get the color
+		color = self.getColorRelativeHex(event.x(), event.y())
+		if color:
+			self.colorLabel.setText(color)
+			self.colorLabel.setVisible(True)
+		else:
+			self.colorLabel.setVisible(False)
 		return
 
 

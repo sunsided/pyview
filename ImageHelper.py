@@ -33,6 +33,10 @@ class ImageObject():
 		"""
 		return self.image.size
 
+	def getPixel(self, x, y):
+		"""Gets the pixel at x,y as a 3-tuple"""
+		return self.image.getpixel((x, y))
+
 	# Loads an image from a file
 	def loadImageFromFile(self, filepath):
 		"""Loads an image from a file and returns a PIL image"""

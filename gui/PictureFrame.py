@@ -25,6 +25,9 @@ class PictureFrame(QtGui.QFrame):
 		# Save owner
 		self.owner = parent
 		
+		# Enable mouse tracking
+		self.setMouseTracking(True)
+		
 		# Disable background
 		self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent)
 		self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
@@ -35,6 +38,11 @@ class PictureFrame(QtGui.QFrame):
 	def forceRepaint(self):
 		"""Forces a repaint"""
 		self.repaint(self.rect())
+		return
+
+	# Mouse was hovered
+	def mouseMoveEvent(self, event):
+		self.owner.mouseMoveHook(event)
 		return
 
 	# Control was resized
