@@ -426,30 +426,27 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		return
 	
 	# Gets the color
-	def getColorRelative(self, x, y):
+	def getColor(self, x, y):
 		"""
 		Gets the color at the given coordinates.
 		x,y is relative to the source rect.
 		The result is a RGB tuple
 		"""
-		# Get position
-		x += self.sourceRect.left()
-		y += self.sourceRect.top()
 		# Sanity check
-		if x >= self.imwidth:
+		if (x >= self.imwidth) or (x < 0):
 			return None
-		if y >= self.imheight:
+		if (y >= self.imheight) or (y < 0):
 			return None
 		return self.image.getPixel(x, y)
 		
 	# Gets the color
-	def getColorRelativeHex(self, x, y):
+	def getColorHex(self, x, y):
 		"""
 		Gets the color at the given coordinates.
 		x,y is relative to the source rect.
 		The result is a web (hex) color representation.
 		"""
-		color = self.getColorRelative(x, y)
+		color = self.getColor(x, y)
 		if not color:
 			return None
 		value = "#%02X"%color[0]+"%02X"%color[1]+"%02X"%color[2]
@@ -475,11 +472,19 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		return
 		
 	def mouseMoveHook(self, event):
-		self.positionLabel.setText( str(event.x()) + "x" + str(event.y()))
-		self.positionLabel.setVisible(True)
+		# Get the mouse position
+		x = event.x() + self.sourceRect.left()
+		y = event.y() + self.sourceRect.top()
 		
-		# Get the color
-		color = self.getColorRelativeHex(event.x(), event.y())
+		# Set the position
+		if (x < self.imwidth) and (x > 0) and (y < self.imheight) and (y > 0):
+			self.positionLabel.setText( str(x) + "x" + str(y))
+			self.positionLabel.setVisible(True)
+		else:
+			self.positionLabel.setVisible(False)
+		
+		# Get and set the color
+		color = self.getColorHex(x, y)
 		if color:
 			self.colorLabel.setText(color)
 			self.colorLabel.setVisible(True)
