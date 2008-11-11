@@ -6,7 +6,7 @@ Helper functions for image handling
 """
 
 import sys
-from PIL import Image, ImagePalette
+from PIL import Image, ImagePalette, ImageQt
 from PyQt4 import QtGui, QtCore
 
 class ImageHelper():
@@ -96,7 +96,7 @@ class ImageObject():
 
 	# Converts a PIL image to a Qt image
 	# Kudos to: http://mail.python.org/pipermail/image-sig/2004-September/002908.html
-	def convertToQtImage(self, encoder="jpeg", mode="RGB"):
+	def convertToQtImageEx(self, encoder="jpeg", mode="RGB"):
 		"""
 		Converts a PIL image to a Qt image.
 		Optional parameters "encoder" and "mode" determine which method will
@@ -116,6 +116,15 @@ class ImageObject():
 
 		# Return the image
 		return qimage
+		
+	# Converts a PIL image to a Qt image
+	def convertToQtImage(self):
+		"""
+		Converts a PIL image to a Qt image.
+		"""
+		# TODO Check PIL version and fallback to the other
+		# function if VERSION < 1.1.6
+		return ImageQt.ImageQt(self.image)
 		
 	# Gets the image's dimensions
 	def getSize(self):
