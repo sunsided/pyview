@@ -13,20 +13,6 @@ class ImageFormatPlugin(object):
 	def __init__(self):
 		return
 		
-	# Gets a list of the subclasses
-	def getPlugins(self):
-		"""
-		Returns a list of all classes inherting from ImageFormatPlugin
-		"""
-		return ImageFormatPlugin.__subclasses__()
-
-	# Returns the PIL version number	
-	def getPILVersion(self):
-		"""
-		Returns the PIL version number
-		"""
-		return Image.VERSION
-		
 	################### OVERRIDE THE FOLLOWING ################################
 	
 	# Gets a list of supported formats

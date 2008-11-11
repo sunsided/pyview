@@ -10,6 +10,7 @@ from gui.MainWindow import MainWindow
 from CommandLine import CommandLine
 from FolderHelper import FolderHelper
 import Version
+import ImageFormats
 
 # Translates a string
 def tr(string):
@@ -35,6 +36,9 @@ def main():
 	# Build command line parser
 	cmdLine = CommandLine(LocalizedVersion())
 	options = cmdLine.getOptions()
+
+	# Load image format plugins
+	ImageFormats.loadImageFormatPlugins()
 
 	# Get initial directory
 	folderHelper = FolderHelper(options)

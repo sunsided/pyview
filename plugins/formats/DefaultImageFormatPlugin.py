@@ -92,7 +92,7 @@ class DefaultImageFormatPlugin(ImageFormatPlugin):
 			return False
 
 
+
 if __name__ == "__main__":
-	x = DefaultImageFormatPlugin()
-	print( x.supportedFormats() )
-print( ImageFormatPlugin().getPlugins() )
+	from ImageFormatPlugin import getPlugins
+	print "--> " + str(getPlugins())
