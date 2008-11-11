@@ -79,7 +79,7 @@ def addPlugins(path, fallback = None):
 	pluginfiles = [fname[:-3] for fname in os.listdir(pluginpath) if fname.endswith(".py") and fname != "ImageFormatPlugin.py" and not fname.startswith("__init__")]
 	
 	# Add path to the search path
-	if not path in sys.path:
+	if not pluginpath in sys.path:
 		sys.path.append(pluginpath)
 	
 	# Import the modules	
