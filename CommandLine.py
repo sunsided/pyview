@@ -59,7 +59,7 @@ class CommandLine():
 		if count >= 1:
 			filename = self.cmdLineArgs[0]
 			if os.path.isfile(filename):
-				print("Loading with file argument: " + filename)
+				print("Starting with file argument: " + filename)
 				self.cmdLineOptions.initialFile = os.path.abspath(filename)
 			else:
 				cmdOptParser.error(

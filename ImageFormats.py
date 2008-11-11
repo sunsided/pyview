@@ -10,14 +10,27 @@ Helper functions for image formats
 
 import sys, os
 
+# The list of loaded plugin classes
+plugins = None
+
+# The list of plugin instances
+__instances = []
+#__instanceMap = {}
+
 # Loads the plugins
 def loadImageFormatPlugins():
 	"""
-	Loads all known image format plugins
+	Loads all known image format plugins.
+	Returns a list of all loaded image format plugin instances.
 	"""
+	global plugins
+	
+	# Once we've loaded the plugins, return the cached object
+	if plugins:
+		return __instances
 	
 	# Load plugins from the application location
-	plugins = addPlugins( "plugins/formats/" )
+	plugins = addPlugins( "plugins/formats/", plugins )
 		
 	# TODO Load plugins from the user's homedir
 	# This should be cross platform, ideally
@@ -27,9 +40,28 @@ def loadImageFormatPlugins():
 	# This should be cross platform, ideally
 	#plugins = addPlugins( "/usr/local/etc/pyview/plugins/formats/", plugins )
 
-	print("Plugins: " + str(plugins))
-	
-	
+	# Instanciate the plugins
+	loadInstances()
+
+	print(str(len(__instances)) + " format plugin(s) loaded")
+	return __instances
+
+# Instanciate the classesplugins
+def loadInstances():
+	"""
+	Takes the list of known plugin classes and instances each of them.
+	Then it returns a list of these instances.
+	The list is also set globally.
+	"""
+
+	global plugins, __instances
+	for plugin in plugins:
+		if not plugin in __instances:
+			instance = plugin()
+			__instances.append(instance)
+			#__instanceMap[plugin] = instance
+			
+	return __instances
 
 def addPlugins(path, fallback = None):
 	"""
@@ -48,7 +80,6 @@ def addPlugins(path, fallback = None):
 	
 	# Add path to the search path
 	if not path in sys.path:
-		print("Adding " + pluginpath + " to the search path")
 		sys.path.append(pluginpath)
 	
 	# Import the modules	
@@ -64,3 +95,4 @@ def addPlugins(path, fallback = None):
 	
 if __name__=="__main__":
 	loadImageFormatPlugins()
+
