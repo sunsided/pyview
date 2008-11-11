@@ -116,7 +116,10 @@ class ImageObject():
 		"""
 		# TODO Check PIL version and fallback to the other
 		# function if VERSION < 1.1.6
-		return ImageQt.ImageQt(self.image)
+		return self.convertToQtImageEx()
+		
+		# ImageQt method seems to have problems with some GIFs!
+		#return ImageQt.ImageQt(self.image)
 		
 	# Gets the image's dimensions
 	def getSize(self):

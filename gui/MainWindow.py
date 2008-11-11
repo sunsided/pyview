@@ -494,7 +494,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		if self.qimage:
 			painter.setClipRegion( pictureClipRegion )
 			painter.drawImage(self.targetRect, self.qimage, self.sourceRect )
-			pass
 
 		return
 		
