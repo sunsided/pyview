@@ -17,6 +17,12 @@ plugins = None
 __instances = []
 #__instanceMap = {}
 
+def getFormatPlugins():
+	"""
+	Gets the list of format plugin instances
+	"""
+	return loadImageFormatPlugins()
+
 # Loads the plugins
 def loadImageFormatPlugins():
 	"""
