@@ -9,6 +9,7 @@ from PyQt4 import QtGui, QtCore
 from gui.MainWindow import MainWindow
 from CommandLine import CommandLine
 from FolderHelper import FolderHelper
+import Version
 
 # Translates a string
 def tr(string):
@@ -19,10 +20,11 @@ def tr(string):
 	return str(translated)
 
 # Version
-class Version:
-	APPNAME     = tr("pyview Image Viewer")
-	APPVERSION  = "0.1 development"
-	DESCRIPTION = tr("A simple image viewer that wants to be like IrfanView")
+class LocalizedVersion:
+	APPNAME		= Version.APPNAME
+	APPTITLE    = tr("Image Viewer")
+	APPVERSION  = Version.APPVERSION
+	DESCRIPTION = tr(Version.DESCRIPTION)
 	
 # Main Entry point
 def main():
@@ -31,7 +33,7 @@ def main():
 	global folderHelper, window
 
 	# Build command line parser
-	cmdLine = CommandLine(Version())
+	cmdLine = CommandLine(LocalizedVersion())
 	options = cmdLine.getOptions()
 
 	# Get initial directory
