@@ -18,13 +18,12 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	"""
 
 	# Initializes the class
-	def __init__(self, imageHelper, folderHelper):
+	def __init__(self, imageHelper):
 		# Initialize UI
 		QtGui.QMainWindow.__init__(self)
 		
 		# Set classes
 		self.imageHelper = imageHelper
-		self.folderHelper = folderHelper
 		self.image = None			# The ImageHelper instance
 		self.qimage = None			# The Qt image copy
 		self.frameRegion = None
@@ -256,14 +255,17 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	def __onOpenFileStarted(self, filepath):
 		"""Notifies the system that the loading of a file has started"""
 		# Emit signal
-		self.emit(QtCore.SIGNAL("openFileStarted(string)"), filepath)
+		self.emit(QtCore.SIGNAL("openFileStarted(char*)"), filepath)
 		return
 
 	# Notifies the system that the loading of a file has finished
 	def __onOpenFileFinished(self, filepath, successful = True):
 		"""Notifies the system that the loading of a file has finished"""
 		# Emit signal
-		self.emit(QtCore.SIGNAL("openFileFinished(string, bool)"), filepath, successful)
+		self.emit(QtCore.SIGNAL("openFileFinished(char*, bool)"), str(filepath), successful)
+		# Sanity check
+		if not successful:
+			return
 		# Display statistics
 		width, height = self.image.getSize()
 		self.statusBar().showMessage(str(width) + "x" + str(height))
@@ -306,11 +308,6 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 		# Region set scrollbars
 		self.updateScrollbarSizeFromImage()
-		
-		# Set dialog startup path
-		self.folderHelper.setLastOpenedFile(filepath)
-		path = self.folderHelper.getFileDialogInitialDirectory()
-		self.setFileDialogDirectory(path)
 
 		# Return
 		print("Done loading image")
