@@ -18,17 +18,20 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	"""
 
 	# Initializes the class
-	def __init__(self, imageHelper):
+	def __init__(self, imageHelper, folderHelper):
 		# Initialize UI
 		QtGui.QMainWindow.__init__(self)
 		
 		# Set classes
 		self.imageHelper = imageHelper
+		self.folderHelper = folderHelper
 		self.image = None			# The ImageHelper instance
 		self.qimage = None			# The Qt image copy
 		self.frameRegion = None
 		self.imheight = 0
 		self.imwidth = 0
+		self.sourceRect = QtCore.QRect(0,0,0,0)
+		self.targetRect = QtCore.QRect(0,0,0,0)
 				
 		# Setup UI
 		self.setupUi(self)
@@ -70,11 +73,14 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.connect(self.hscroll, QtCore.SIGNAL("valueChanged(int)"), self.scrollBarSlided)
 		
 		# Scrollbars	
-		self.enableHorizontalScrollBar(True)
-		self.enableVerticalScrollBar(True)
+		self.enableHorizontalScrollBar(False)
+		self.enableVerticalScrollBar(False)
 
 		# Finally, add the PictureFrame to the Scrollarea		
 		self.pictureFrame.setVisible(True)
+		
+		# Refresh
+		self.refreshViewport()
 		
 		# Create statusbar widgets
 		self.positionLabel = QtGui.QLabel()
@@ -260,7 +266,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.emit(QtCore.SIGNAL("openFileFinished(string, bool)"), filepath, successful)
 		# Display statistics
 		width, height = self.image.getSize()
-		self.statusBar().showMessage(str(width) + "px x " + str(height) + "px")
+		self.statusBar().showMessage(str(width) + "x" + str(height))
 		# Display image
 		self.pictureFrame.forceRepaint()
 		return
@@ -300,6 +306,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 		# Region set scrollbars
 		self.updateScrollbarSizeFromImage()
+		
+		# Set dialog startup path
+		self.folderHelper.setLastOpenedFile(filepath)
+		path = self.folderHelper.getFileDialogInitialDirectory()
+		self.setFileDialogDirectory(path)
 
 		# Return
 		print("Done loading image")
@@ -315,6 +326,10 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			
 		qimage = self.image.convertToQtImage()
 		self.qimage = qimage
+		
+		# Refresh the viewport
+		self.refreshViewport()
+		
 		return qimage
 
 	# General event handling
@@ -411,18 +426,22 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		
 		return
 	
-	# Resize event
-	def resizeEvent(self, event):
-		return
-		
-	def resizeHook(self, frame):
-	
+	def refreshViewport(self):
+		"""Refreshes the viewport"""
 		self.frameRegion = QtGui.QRegion( self.pictureFrame.rect() )
 	
 		self.calculateViewport()
 		self.updateScrollbarSizeFromImage()
 		self.calculateViewport()
 		self.pictureFrame.forceRepaint()
+		return
+	
+	# Resize event
+	def resizeEvent(self, event):
+		return
+	
+	def resizeHook(self, frame):
+		self.refreshViewport()
 		return
 	
 	# Gets the color
@@ -460,7 +479,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		backgroundClipRegion = self.frameRegion.xored( self.targetRegion )
 		
 		# Fill the background	
-		painter.setClipRegion( backgroundClipRegion )
+		if self.qimage:
+			painter.setClipRegion( backgroundClipRegion )
 		painter.fillRect( frame.rect(), self.bgbrush )
 			
 		# Draw the image

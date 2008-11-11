@@ -45,7 +45,7 @@ def main():
 	#QtGui.QApplication.setStyle(QtGui.QStyleFactory.create("Cleanlooks"))
 
 	# Create and set window
-	window = MainWindow(imageHelper)
+	window = MainWindow(imageHelper, folderHelper)
 	window.setFileDialogDirectory(startDir)
 	window.centerWindow()
 	window.show()

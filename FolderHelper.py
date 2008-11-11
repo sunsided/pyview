@@ -55,7 +55,6 @@ class FolderHelper():
 		"""Sets the path of the last opened file"""
 		filepath = str(filepath)
 		if os.path.isfile(filepath):
-			print("Setting last opened file: " + filepath)
 			self.lastOpenedFile = filepath
 		return
 		

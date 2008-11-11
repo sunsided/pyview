@@ -6,7 +6,7 @@ Helper functions for image handling
 """
 
 import sys
-from PIL import Image
+from PIL import Image, ImagePalette
 from PyQt4 import QtGui, QtCore
 
 class ImageHelper():
@@ -35,12 +35,63 @@ class ImageObject():
 
 	def getPixel(self, x, y):
 		"""Gets the pixel at x,y as a 3-tuple"""
-		return self.image.getpixel((x, y))
+		
+		# TODO: convert indexed colors to RGB
+		value = self.image.getpixel((x, y))
+		value = self.convertColorToRGB(value)
+		
+		return value
+
+	# Converts a color to RGB
+	def convertColorToRGB(self, color):
+		"""Converts a color to RGB"""
+		
+		# Get the image mode
+		mode = self.image.mode
+
+		# If the color is in RGBA mode, skip the alpha
+		if mode == "RGBA":
+			return color[0:3]
+			
+		# If the color is RGB, return it
+		if mode == "RGB":
+			return color
+
+		# Paletted
+		if mode == "P":
+			value = self.lut[color]
+			return value
+
+		# Grayscale
+		if mode == "L":
+			return color,color,color
+
+		# Bitmaps
+		if mode == "1":
+			if color==1:
+				return 255,255,255
+			else:
+				return 0,0,0
+		
+		# Return something
+		return None
 
 	# Loads an image from a file
 	def loadImageFromFile(self, filepath):
 		"""Loads an image from a file and returns a PIL image"""
-		self.image = Image.open(str(filepath))
+		image = Image.open(str(filepath))	
+		
+		# If it is a pallete image, loat the LUT
+		if image.mode == "P":
+			lut = image.resize((256, 1))
+			lut.putdata(range(256))
+			lut = lut.convert("RGB").getdata() 
+			self.lut = lut
+		else:
+			self.lut = None
+		
+		# Set the image and return
+		self.image = image
 		return
 
 	# Converts a PIL image to a Qt image
