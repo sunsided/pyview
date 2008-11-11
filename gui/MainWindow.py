@@ -9,6 +9,7 @@ import sys, math
 from PyQt4 import QtGui, QtCore
 from ui.Ui_MainWindow import Ui_MainWindow
 from PictureFrame import PictureFrame
+from ImageHelper import ImageHelper
 
 # Main Window class
 
@@ -18,12 +19,12 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 	"""
 
 	# Initializes the class
-	def __init__(self, imageHelper):
+	def __init__(self):
 		# Initialize UI
 		QtGui.QMainWindow.__init__(self)
 		
 		# Set classes
-		self.imageHelper = imageHelper
+		self.imageHelper = ImageHelper()
 		self.image = None			# The ImageHelper instance
 		self.qimage = None			# The Qt image copy
 		self.frameRegion = None
