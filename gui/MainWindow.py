@@ -308,6 +308,10 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 		# Region set scrollbars
 		self.updateScrollbarSizeFromImage()
+		self.vscroll.setValue(0)
+		self.hscroll.setValue(0)
+		
+		# Enable or disable opaque mode
 		self.pictureFrame.setOpaqueMode(pilimage.image.mode != "RGBA")
 
 		# Return
@@ -491,7 +495,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			painter.setClipRegion( pictureClipRegion )
 			painter.drawImage(self.targetRect, self.qimage, self.sourceRect )
 			pass
-		
+
 		return
 		
 	def mouseMoveHook(self, event):
