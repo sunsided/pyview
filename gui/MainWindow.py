@@ -9,7 +9,7 @@ import sys, math
 from PyQt4 import QtGui, QtCore
 from ui.Ui_MainWindow import Ui_MainWindow
 from PictureFrame import PictureFrame
-from ImageHelper import ImageHelper
+from ImageObject import ImageObject
 
 # Main Window class
 
@@ -24,8 +24,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		QtGui.QMainWindow.__init__(self)
 		
 		# Set classes
-		self.imageHelper = ImageHelper()
-		self.image = None			# The ImageHelper instance
+		self.image = None			# The ImageObject instance
 		self.qimage = None			# The Qt image copy
 		self.frameRegion = None
 		self.imheight = 0
@@ -293,7 +292,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.__onOpenFileStarted(filepath)
 
 		# Load image using PIL
-		pilimage = self.imageHelper.createImage()
+		pilimage = ImageObject()
 		pilimage.loadImageFromFile(filepath)
 		if not pilimage:
 			self.__onOpenFileFinished(filepath, False)
@@ -466,7 +465,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		color = self.getColor(x, y)
 		if not color:
 			return None
-		value = "#%02X"%color[0]+"%02X"%color[1]+"%02X"%color[2]
+		value = "#%02X%02X%02X"%(color[0],color[1],color[2])
 		return value
 	
 	# Painting hook

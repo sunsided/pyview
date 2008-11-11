@@ -9,14 +9,6 @@ import sys
 from PIL import Image, ImagePalette, ImageQt
 from PyQt4 import QtGui, QtCore
 
-class ImageHelper():
-	"""Helper class"""
-
-	# Creates an image
-	def createImage(self):
-		"""Creates a new image object"""
-		return ImageObject()
-
 class ImageObject():
 
 	def __init__(self):
