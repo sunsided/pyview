@@ -493,8 +493,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		# Fill the background	
 		if self.qimage and self.pictureFrame.isOpaque:
 			painter.setClipRegion( backgroundClipRegion )
-		painter.fillRect( frame.rect(), self.bgbrush )
-		self.renderCheckerBoard(painter)
+
+		if self.getCheckerEnabled():
+			self.renderCheckerBoard(painter)
+		else:
+			painter.fillRect( frame.rect(), self.bgbrush )
 			
 		# Draw the image
 		if self.qimage:
@@ -502,6 +505,12 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			painter.drawImage(self.targetRect, self.qimage, self.sourceRect )
 
 		return
+	
+	def getCheckerEnabled(self):
+		"""
+		Returns True if checker painting is enabled
+		"""
+		return self.checkerEnabled
 	
 	def setCheckerEnabled(self, enabled):
 		"""
