@@ -380,6 +380,11 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			targetRect.setWidth(self.imwidth)
 		if targetRect.height() > self.imheight:
 			targetRect.setHeight(self.imheight)
+			
+		# Center target rect
+		leftOffset = (self.pictureFrame.width() - targetRect.width()) / 2
+		topOffset = (self.pictureFrame.height() - targetRect.height()) / 2
+		targetRect.adjust(leftOffset, topOffset, leftOffset, topOffset)
 
 		# Calculate the clipping regions			
 		self.targetRegion = QtGui.QRegion( targetRect )
