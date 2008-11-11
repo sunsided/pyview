@@ -308,6 +308,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 
 		# Region set scrollbars
 		self.updateScrollbarSizeFromImage()
+		self.pictureFrame.setOpaqueMode(pilimage.image.mode != "RGBA")
 
 		# Return
 		print("Done loading image")
@@ -481,7 +482,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		backgroundClipRegion = self.frameRegion.xored( self.targetRegion )
 		
 		# Fill the background	
-		if self.qimage:
+		if self.qimage and self.pictureFrame.isOpaque:
 			painter.setClipRegion( backgroundClipRegion )
 		painter.fillRect( frame.rect(), self.bgbrush )
 			

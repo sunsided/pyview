@@ -29,11 +29,17 @@ class PictureFrame(QtGui.QFrame):
 		self.setMouseTracking(True)
 		
 		# Disable background
-		self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent)
-		self.setAttribute(QtCore.Qt.WA_NoSystemBackground)
+		self.setOpaqueMode(True)
 				
 		return
-		
+	
+	def setOpaqueMode(self, enabled):
+		"""Enables or disables opaque mode"""
+		self.isOpaque = enabled
+		self.setAttribute(QtCore.Qt.WA_OpaquePaintEvent, enabled)
+		self.setAttribute(QtCore.Qt.WA_NoSystemBackground, enabled)
+		return
+	
 	# Forces a repaint
 	def forceRepaint(self):
 		"""Forces a repaint"""
