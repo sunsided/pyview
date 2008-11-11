@@ -31,6 +31,8 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.imwidth = 0
 		self.sourceRect = QtCore.QRect(0,0,0,0)
 		self.targetRect = QtCore.QRect(0,0,0,0)
+		self.checker = None
+		self.checkerEnabled = False
 				
 		# Setup UI
 		self.setupUi(self)
@@ -86,6 +88,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.statusBar().addPermanentWidget(self.positionLabel)
 		self.colorLabel = QtGui.QLabel()
 		self.statusBar().addPermanentWidget(self.colorLabel)
+		self.colorLabel2 = QtGui.QLabel()
 
 		# Set options
 		self.setAskOnExit(False)
@@ -312,7 +315,9 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		self.hscroll.setValue(0)
 		
 		# Enable or disable opaque mode
-		self.pictureFrame.setOpaqueMode(pilimage.image.mode != "RGBA")
+		rgba = pilimage.image.mode == "RGBA"
+		self.pictureFrame.setOpaqueMode(not rgba)
+		self.setCheckerEnabled(rgba)
 
 		# Return
 		print("Done loading image")
@@ -489,6 +494,7 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 		if self.qimage and self.pictureFrame.isOpaque:
 			painter.setClipRegion( backgroundClipRegion )
 		painter.fillRect( frame.rect(), self.bgbrush )
+		self.renderCheckerBoard(painter)
 			
 		# Draw the image
 		if self.qimage:
@@ -496,11 +502,68 @@ class MainWindow(QtGui.QMainWindow, Ui_MainWindow):
 			painter.drawImage(self.targetRect, self.qimage, self.sourceRect )
 
 		return
+	
+	def setCheckerEnabled(self, enabled):
+		"""
+		Activates or deactivates the checker background pattern.
+		"""
+		print("%s checkerboard." % ("Enabling" if enabled else "Disabling"))
+		if enabled == self.checkerEnabled:
+			return
+		self.checkerEnabled = enabled
+		if enabled: self.getCheckerBoard()
+		self.pictureFrame.forceRepaint()
+		return
+	
+	def getCheckerBoard(self):
+		"""
+		Prepares the checkerbox pattern.
+		"""
+		if not self.checkerEnabled:
+			return None
+		if self.checker:
+			return self.checker
+		
+		# Prepare
+		lightbrush = QtGui.QBrush(QtGui.QColor("#B0B0B0"))
+		darkbrush  = QtGui.QBrush(QtGui.QColor("#808080"))
+
+		size = 12		
+		width = 8*size
+		height = 8*size
+		pixmap = QtGui.QPixmap(width, height)
+		painter = QtGui.QPainter(pixmap)
+		painter.fillRect(0, 0, width, height, lightbrush)
+		on = False
+		
+		# Paint the checker board
+		for y in range(0, height+1):
+			on = not on
+			top = y * size
+			for x in range(0 if on else 1, width+1, 2):
+				left = x * size
+				checkerRect = QtCore.QRect( left, top, size, size )
+				painter.fillRect( checkerRect, darkbrush )
+				
+		self.checker = pixmap
+		return pixmap
+		
+	def renderCheckerBoard(self, painter):
+		"""
+		Renders a checkerboard pattern using the given painter.
+		"""
+		checker = self.getCheckerBoard()
+		if not checker:
+			return
+		for y in range(0, self.pictureFrame.height()+1, checker.height()):
+			for x in range(0, self.pictureFrame.width()+1, checker.width()):
+				painter.drawPixmap(x, y, checker)
+		return
 		
 	def mouseMoveHook(self, event):
 		# Get the mouse position
-		x = event.x() + self.sourceRect.left()
-		y = event.y() + self.sourceRect.top()
+		x = event.x() + self.sourceRect.left() - self.targetRect.left()
+		y = event.y() + self.sourceRect.top() - self.targetRect.top()
 		
 		# Set the position
 		if (x < self.imwidth) and (x > 0) and (y < self.imheight) and (y > 0):
