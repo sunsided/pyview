@@ -46,13 +46,13 @@ def loadImageFormatPlugins():
 	# This should be cross platform, ideally
 	#plugins = addPlugins( "/usr/local/etc/pyview/plugins/formats/", plugins )
 
-	# Instanciate the plugins
+	# Instantiate the plugins
 	loadInstances()
 
 	print(str(len(__instances)) + " format plugin(s) loaded")
 	return __instances
 
-# Instanciate the classesplugins
+# Instantiate the plugins
 def loadInstances():
 	"""
 	Takes the list of known plugin classes and instances each of them.
@@ -77,20 +77,20 @@ def addPlugins(path, fallback = None):
 	"""
 	
 	# Get the path
-	pluginpath = os.path.abspath(str(path))
-	if not os.path.isdir(pluginpath):
+	pluginPath = os.path.abspath(str(path))
+	if not os.path.isdir(pluginPath):
 		return fallback
 	
 	# Scan for files
-	pluginfiles = [fname[:-3] for fname in os.listdir(pluginpath) if fname.endswith(".py") and fname != "ImageFormatPlugin.py" and not fname.startswith("__init__")]
+	pluginFiles = [fileName[:-3] for fileName in os.listdir(pluginPath) if fileName.endswith(".py") and fileName != "ImageFormatPlugin.py" and not fileName.startswith("__init__")]
 	
 	# Add path to the search path
-	if not pluginpath in sys.path:
-		sys.path.append(pluginpath)
+	if not pluginPath in sys.path:
+		sys.path.append(pluginPath)
 	
 	# Import the modules	
-	imported_modules = [__import__(filename) for filename in pluginfiles]
-	if len(imported_modules) == 0:
+	imported_modules = [__import__(filename) for filename in pluginFiles]
+	if not len(imported_modules):
 		return fallback
 
 	# Get the list of imported classes

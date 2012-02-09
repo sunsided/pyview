@@ -43,7 +43,7 @@ class FolderHelper():
 			for line in lines:
 				if line.startswith("XDG_PICTURES_DIR"):
 					pictures_dir = line.split("=", 1)[1].strip()
-					if( pictures_dir.startswith("\"")):
+					if pictures_dir.startswith("\""):
 						pictures_dir = pictures_dir[1:-1]
 					pictures_dir = pictures_dir.replace("$HOME", user_home_dir)
 					pictures_dir = pictures_dir.replace("~/", user_home_dir + "/")
@@ -62,7 +62,7 @@ class FolderHelper():
 	def getStartDir(self):
 		"""Gets the directory from which pyview was started"""
 		startDir = str(self.cmdLineOptions.initialDirectory)
-		if( os.path.isdir(startDir) ):
+		if os.path.isdir(startDir):
 			startDir = os.path.normpath(startDir)
 		else:
 			startDir = os.path.dirname(startDir)
@@ -73,7 +73,7 @@ class FolderHelper():
 		"""Gets the initial directory for a file|open dialog"""
 		# Startverzeichnis holen
 		startDir = None
-		if self.lastOpenedFile != None:
+		if self.lastOpenedFile is not None:
 			startDir = os.path.dirname(str(self.lastOpenedFile))
 		if not startDir:
 			startDir = self.getStartDir()

@@ -98,7 +98,7 @@ class ImageObject():
 
 		# Convert the PIL image to a string
 		PILstring = self.image.convert(mode).tostring(encoder, mode)
-		if( not PILstring ): return None
+		if not PILstring: return None
 
 		# Convert the string to a QImage
 		qimage = QtGui.QImage()

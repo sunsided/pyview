@@ -68,7 +68,7 @@ class CommandLine():
 				)
 				
 		# Check directory argument
-		if self.cmdLineOptions.initialDirectory != None:
+		if self.cmdLineOptions.initialDirectory is not None:
 			if not os.path.isdir(self.cmdLineOptions.initialDirectory):
 				cmdOptParser.error(
 					self.tr("Invalid startup directory given. Not a directory:") + 
