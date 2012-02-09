@@ -22,9 +22,9 @@ def tr(string):
 
 # Version
 class LocalizedVersion:
-	APPNAME		= Version.APPNAME
+	APPNAME		= Version.APP_NAME
 	APPTITLE    = tr("Image Viewer")
-	APPVERSION  = Version.APPVERSION
+	APPVERSION  = Version.APP_VERSION
 	DESCRIPTION = tr(Version.DESCRIPTION)
 	
 # Main Entry point

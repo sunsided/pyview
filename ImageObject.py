@@ -49,16 +49,16 @@ class ImageObject():
 		if mode == "RGB":
 			return color
 
-		# Paletted
+		# palette image
 		if mode == "P":
 			value = self.lut[color]
 			return value
 
-		# Grayscale
+		# grayscale
 		if mode == "L":
 			return color,color,color
 
-		# Bitmaps
+		# bitmaps
 		if mode == "1":
 			if color==1:
 				return 255,255,255
@@ -69,11 +69,11 @@ class ImageObject():
 		return None
 
 	# Loads an image from a file
-	def loadImageFromFile(self, filepath):
+	def loadImageFromFile(self, filePath):
 		"""Loads an image from a file and returns a PIL image"""
-		image = Image.open(str(filepath))	
+		image = Image.open(str(filePath))
 		
-		# If it is a pallete image, loat the LUT
+		# If it is a palette image, load the LUT
 		if image.mode == "P":
 			lut = image.resize((256, 1))
 			lut.putdata(range(256))
@@ -101,13 +101,13 @@ class ImageObject():
 		if not PILstring: return None
 
 		# Convert the string to a QImage
-		qimage = QtGui.QImage()
-		qimage.loadFromData(QtCore.QByteArray(PILstring))
+		qImage = QtGui.QImage()
+		qImage.loadFromData(QtCore.QByteArray(PILstring))
 			
 			
 
 		# Return the image
-		return qimage
+		return qImage
 		
 	# Converts a PIL image to a Qt image
 	def convertToQtImage(self):

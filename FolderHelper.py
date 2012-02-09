@@ -31,15 +31,15 @@ class FolderHelper():
 		# http://www.blueskyonmars.com/2005/08/05/finding-a-users-my-documents-folder-on-windows/
 		# TODO: Extend this for Windows, MacOS ...
 		user_home_dir = self.getUserHomeDir()
-		conf_home = user_home_dir + "/.config"
+		config_home = user_home_dir + "/.config"
 		if os.environ.has_key("XDG_CONFIG_HOME"):
-			conf_home = os.environ["XDG_CONFIG_HOME"]
+			config_home = os.environ["XDG_CONFIG_HOME"]
 	
-		userdirs_path = str(conf_home + "/user-dirs.dirs")
-		if os.path.exists(userdirs_path) and os.path.isfile(userdirs_path):
-			userdirs_file = open(userdirs_path, "r")
-			lines = userdirs_file.readlines()
-			userdirs_file.close()
+		userDirectories_path = str(config_home + "/user-dirs.dirs")
+		if os.path.exists(userDirectories_path) and os.path.isfile(userDirectories_path):
+			userDirectories_file = open(userDirectories_path, "r")
+			lines = userDirectories_file.readlines()
+			userDirectories_file.close()
 			for line in lines:
 				if line.startswith("XDG_PICTURES_DIR"):
 					pictures_dir = line.split("=", 1)[1].strip()
@@ -51,11 +51,11 @@ class FolderHelper():
 		return None
 
 	# Sets the last opened file
-	def setLastOpenedFile(self, filepath):
+	def setLastOpenedFile(self, filePath):
 		"""Sets the path of the last opened file"""
-		filepath = str(filepath)
-		if os.path.isfile(filepath):
-			self.lastOpenedFile = filepath
+		filePath = str(filePath)
+		if os.path.isfile(filePath):
+			self.lastOpenedFile = filePath
 		return
 		
 	# Gets the application's startup directory
@@ -71,7 +71,6 @@ class FolderHelper():
 	# Gets the start directory for the file|open dialog
 	def getFileDialogInitialDirectory(self):
 		"""Gets the initial directory for a file|open dialog"""
-		# Startverzeichnis holen
 		startDir = None
 		if self.lastOpenedFile is not None:
 			startDir = os.path.dirname(str(self.lastOpenedFile))

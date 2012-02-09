@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 # Version
 
-APPNAME		 = "pyview"
-APPVERSION   = "0.1dev1~2"
+APP_NAME	 = "pyview"
+APP_VERSION  = "0.1dev1~2"
 DESCRIPTION  = "A simple image viewer that wants to be like IrfanView"
 AUTHOR       = "Markus Mayer"
 AUTHOR_EMAIL = "Markus Mayer <code@defx.de>"
